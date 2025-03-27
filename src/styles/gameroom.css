@@ -1,0 +1,252 @@
+/* Room Page Styles - Based on gamelistpage.css */
+:root {
+  --primary-color: #3b82f6;
+  --secondary-color: #60a5fa;
+  --background-color: #f3f4f6;
+  --text-color: #1f2937;
+  --card-background: #ffffff;
+  --hover-color: #e5e7eb;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+  background-color: var(--background-color);
+}
+
+/* Button Styles */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--secondary-color);
+}
+
+.btn-primary:disabled {
+  background-color: #93c5fd;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background-color: #ccc;
+  color: var(--text-color);
+}
+
+.btn-secondary:hover {
+  background-color: #e5e7eb;
+}
+
+.btn-success {
+  background-color: #10b981;
+  color: white;
+}
+
+.btn-success:hover {
+  background-color: #059669;
+}
+
+/* Back Button */
+.back-btn {
+  margin-bottom: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Page Heading */
+.page-heading {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-color);
+  margin-bottom: 1rem;
+}
+
+/* Room and Players Section */
+.room-page {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 1rem;
+}
+
+.players-section,
+.game-chat-section {
+  background-color: var(--card-background);
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+}
+
+.players-section .player-card {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.players-section .player-card.ready {
+  background-color: #ecfdf5;
+  border: 1px solid #6ee7b7;
+}
+
+.players-section .player-card.not-ready {
+  background-color: #f3f4f6;
+  border: 1px solid #e5e7eb;
+}
+
+/* Chat Section */
+.chat-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-messages {
+  flex-grow: 1;
+  overflow-y: auto;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.chat-input {
+  display: flex;
+  padding: 1rem;
+}
+
+.chat-input input {
+  flex-grow: 1;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  margin-right: 0.5rem;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .room-page {
+    grid-template-columns: 1fr;
+  }
+
+  .page-heading {
+    font-size: 1.25rem;
+  }
+}
+
+/* Screen Reader Only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Additional Player Name and Status Styles */
+.player-name-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.player-username {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1F2937;
+  line-height: 1.25;
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-status {
+  font-weight: 500;
+  text-transform: capitalize;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+.player-status-waiting {
+  background-color: #F3F4F6;
+  color: #4B5563;
+}
+
+.player-status-not_ready {
+  background-color: #FEF3F2;
+  color: #B42318;
+}
+
+.player-status-ready {
+  background-color: #ECFDF3;
+  color: #027A48;
+}
+
+.player-status-in-game {
+  background-color: #EFF8FF;
+  color: #175CD3;
+}
+
+.player-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.player-host-badge {
+  background-color: #FEF0C7;
+  color: #B54708;
+  font-size: 0.625rem;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-weight: 600;
+}
+
+.player-current-user-badge {
+  background-color: #F9FAFB;
+  color: #344054;
+  border: 1px solid #D0D5DD;
+  font-size: 0.625rem;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-weight: 600;
+}
+
+/* Hover effects for player cards */
+.player-card {
+  transition: all 0.3s ease;
+}
+
+.player-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .player-username {
+    font-size: 0.875rem;
+    max-width: 100px;
+  }
+
+  .player-status {
+    font-size: 0.625rem;
+  }
+}
