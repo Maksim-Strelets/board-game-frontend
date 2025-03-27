@@ -2,10 +2,9 @@ import { useState, useEffect } from 'react';
 import authService from '../services/authService';
 
 export const useAuth = () => {
-  const [trash, setUser] = useState(null);
+  const [user, setUser] = useState(authService.decodeToken());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const user = authService.decodeToken()
 
   useEffect(() => {
     // Check authentication status on mount

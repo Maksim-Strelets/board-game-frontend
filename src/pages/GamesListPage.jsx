@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
-import { Plus, GamepadIcon, ArrowLeft } from 'lucide-react';
+import { Plus, ArrowLeft } from 'lucide-react';
 import CreateRoomModal from './../components/games/gamelist/CreateRoomModal';
 import { useAuth } from './../hooks/useAuth'
 import './../styles/gamelistpage.css';
@@ -59,8 +59,8 @@ const GameListPage: React.FC = () => {
           name: room.name,
           creator: 'Unknown', // Backend doesn't provide creator info
           currentPlayers: room.players ? room.players.length : 0,
-          maxPlayers: selectedGame.max_players, // Using game's max players
-          status: 'waiting' // Assuming default status
+          maxPlayers: room.max_players, // Using game's max players
+          status: room.status // Assuming default status
         }));
 
         setGameRooms(transformedRooms);
@@ -104,9 +104,9 @@ const GameListPage: React.FC = () => {
         gameId: newRoom.game_id.toString(),
         name: newRoom.name,
         creator: 'CurrentUser', // Would come from auth context
-        currentPlayers: 0,
-        maxPlayers: selectedGame.max_players,
-        status: 'waiting'
+        currentPlayers: newRoom.players ? newRoom.players.length : 0,
+        maxPlayers: newRoom.max_players,
+        status: newRoom.status
       };
 
       // Add room and close dialog

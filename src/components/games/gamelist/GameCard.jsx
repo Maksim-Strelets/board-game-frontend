@@ -1,4 +1,4 @@
-import { Plus, GamepadIcon } from 'lucide-react';
+import { GamepadIcon } from 'lucide-react';
 import Game from './Interfaces';
 
 // Game Card Component
