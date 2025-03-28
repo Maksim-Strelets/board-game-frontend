@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 
 import './../styles/gameroom.css';
+import './../styles/chat.css';
 
 import { useAuth } from './../hooks/useAuth'
-
 
 const RoomPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { gameId, roomId } = useParams();
+
   const [socket, setSocket] = useState(null);
   const [chatMessages, setChatMessages] = useState([]);
   const [roomName, setRoomName] = useState('');
@@ -20,6 +21,42 @@ const RoomPage: React.FC = () => {
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
+  // Refs for chat scrolling and input
+  const chatMessagesRef = useRef(null);
+  const chatInputRef = useRef(null);
+  const [isUserScrolling, setIsUserScrolling] = useState(false);
+
+  // Effect to handle auto-scrolling
+  useEffect(() => {
+    const chatContainer = chatMessagesRef.current;
+    if (!chatContainer) return;
+
+    // Only scroll to bottom if not user scrolling and there are messages
+    if (!isUserScrolling && chatMessages.length > 0) {
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+  }, [chatMessages, isUserScrolling]);
+
+  // Effect to handle scroll tracking
+  useEffect(() => {
+    const chatContainer = chatMessagesRef.current;
+    if (!chatContainer) return;
+
+    const handleScroll = () => {
+      // Check if user has scrolled up from the bottom
+      const isNearBottom =
+        chatContainer.scrollHeight - chatContainer.scrollTop - chatContainer.clientHeight < 50;
+
+      setIsUserScrolling(!isNearBottom);
+    };
+
+    chatContainer.addEventListener('scroll', handleScroll);
+
+    return () => {
+      chatContainer.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
     // Fetch initial room data
   useEffect(() => {
     const fetchRoomData = async () => {
@@ -28,11 +65,23 @@ const RoomPage: React.FC = () => {
         const response = await fetch(`http://localhost:8000/board-games/${gameId}/rooms/${roomId}`);
         const roomData = await response.json();
 
+        const chatResponse = await fetch(`http://localhost:8000/chat/room/${roomId}`);
+        const chatData = await chatResponse.json();
+
         // Set initial room status and users
         setRoomName(roomData.name || '');
         setRoomMaxPlayers(roomData.max_players || 0);
         setRoomStatus(roomData.status || 'waiting');
         setRoomUsers(roomData.players || []);
+
+        // Set initial chat messages
+        setChatMessages(chatData.map(msg => ({
+          id: msg.id,
+          user_id: msg.user_id,
+          username: msg.user.username,
+          message: msg.content,
+          timestamp: msg.timestamp
+        })));
       } catch (err) {
         console.error('Room data fetch error:', err);
       } finally {
@@ -58,11 +107,24 @@ const RoomPage: React.FC = () => {
 
       switch(data.type) {
         case 'chat':
-          setChatMessages(prev => [...prev, {
-            user_id: data.user_id,
-            message: data.message,
-            timestamp: data.timestamp
-          }]);
+          // Ensure we don't add duplicate messages
+          setChatMessages(prev => {
+            // Check if message already exists (by comparing content and timestamp)
+            const isDuplicate = prev.some(
+              msg => msg.message === data.message.content &&
+                     msg.timestamp === data.message.timestamp
+            );
+
+            if (isDuplicate) return prev;
+
+            return [...prev, {
+              id: data.message.id,
+              user_id: data.message.user_id,
+              username: data.user.username,
+              message: data.message.content,
+              timestamp: data.message.timestamp
+            }];
+          });
           break;
 
         case 'user_joined':
@@ -107,6 +169,9 @@ const RoomPage: React.FC = () => {
         timestamp: new Date().toISOString()
       }));
       setInputMessage('');
+
+      // Focus back on input after sending
+      chatInputRef.current?.focus();
     }
   };
 
@@ -225,40 +290,63 @@ const RoomPage: React.FC = () => {
                   Start Game
                 </button>
             </div>
-
+          </div>
+          <div className="game-chat-section col-span-3">
             {/* Chat Section */}
-            <div className="chat-section bg-white border rounded-lg shadow-md">
-              <div className="chat-messages h-64 overflow-y-auto p-4 border-b">
-                {chatMessages.map((msg, index) => {
-                  const sender = roomUsers.find(p => p.user_id === msg.user_id);
-                  return (
-                    <div key={index} className="mb-2 p-2 bg-gray-50 rounded">
-                      <span className="font-semibold text-gray-800 mr-2">
-                        {sender?.user_data.username || 'Unknown'}:
-                      </span>
-                      {msg.message}
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="chat-input p-4 flex">
-                <input
-                  type="text"
-                  value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && sendChatMessage()}
-                  placeholder="Type a message..."
-                  className="flex-grow mr-2 p-2 border rounded-lg"
-                />
-                <button
-                  onClick={sendChatMessage}
-                  disabled={!inputMessage.trim()}
-                  className="btn btn-primary"
+              <div className="chat-section">
+                <div
+                  ref={chatMessagesRef}
+                  className="chat-messages"
+                  style={{
+                    overflowY: 'auto',
+                    maxHeight: '400px'
+                  }}
                 >
-                  Send
-                </button>
+                  {chatMessages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`chat-message ${
+                        msg.user_id === user.id
+                          ? 'chat-message-self'
+                          : 'chat-message-user'
+                      }`}
+                    >
+                      <div className="chat-message-header">
+                        <span className="chat-message-username">
+                          {msg.username || 'Unknown'}
+                        </span>
+                        <span className="chat-message-timestamp">
+                          {new Date(msg.timestamp).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute:'2-digit'
+                          })}
+                        </span>
+                      </div>
+                      <div className="chat-message-content">
+                        {msg.message}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="chat-input-container">
+                  <input
+                    ref={chatInputRef}
+                    type="text"
+                    className="chat-input"
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && sendChatMessage()}
+                    placeholder="Type a message..."
+                  />
+                  <button
+                    className="chat-send-button"
+                    onClick={sendChatMessage}
+                    disabled={!inputMessage.trim()}
+                  >
+                    Send
+                  </button>
+                </div>
               </div>
-            </div>
           </div>
         </div>
       </div>
