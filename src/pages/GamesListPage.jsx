@@ -5,6 +5,22 @@ import CreateRoomModal from './../components/games/gamelist/CreateRoomModal';
 import { useAuth } from './../hooks/useAuth'
 import './../styles/gamelistpage.css';
 
+const importAllLogos = (r) => {
+  const images = {};
+  r.keys().forEach((key) => {
+    const gameName = key.split('/')[1]
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+    images[gameName] = r(key);
+  });
+  return images;
+};
+
+const GAME_IMAGES = importAllLogos(
+  require.context('./../assets/games/', true, /logo\.png$/)
+);
+
 const GameListPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -14,6 +30,10 @@ const GameListPage: React.FC = () => {
   const [selectedGame, setSelectedGame] = useState(null);
   const [gameRooms, setGameRooms] = useState([]);
   const [isCreateRoomDialogOpen, setIsCreateRoomDialogOpen] = useState(false);
+
+  const getGameImage = (gameName) => {
+    return GAME_IMAGES[gameName] || '/api/placeholder/300/200';
+  };
 
   // Fetch games from endpoint
   useEffect(() => {
@@ -172,8 +192,8 @@ const GameListPage: React.FC = () => {
                 onClick={() => setSelectedGame(game)}
               >
                 <img
-                  src="/api/placeholder/300/200"
-                  alt={game.name}
+                  src={getGameImage(game.name)}
+                  alt={`${game.name} logo`}
                   className="game-card-image"
                 />
                 <div className="game-card-content">
