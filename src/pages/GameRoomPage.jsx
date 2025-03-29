@@ -316,7 +316,7 @@ const RoomPage: React.FC = () => {
                           {msg.username || 'Unknown'}
                         </span>
                         <span className="chat-message-timestamp">
-                          {new Date(msg.timestamp).toLocaleTimeString([], {
+                          {new Date(msg.timestamp + "Z").toLocaleTimeString([], {
                             hour: '2-digit',
                             minute:'2-digit'
                           })}
