@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 
-import config from '../config'
+import api from '../utils/api'
 
 import './../styles/gameroom.css';
 import './../styles/chat.css';
@@ -89,11 +89,8 @@ const RoomPage: React.FC = () => {
       try {
         setIsLoading(true);
         console.log('room loading started');
-        const response = await fetch(`${config.apiUrl}/board-games/${gameId}/rooms/${roomId}`);
-        const roomData = await response.json();
-
-        const chatResponse = await fetch(`${config.apiUrl}/chat/room/${roomId}`);
-        const chatData = await chatResponse.json();
+        const roomData = await api.get(`/board-games/${gameId}/rooms/${roomId}`);
+        const chatData = await api.get(`/chat/room/${roomId}`);
 
         // Set initial room status and users
         setRoomName(roomData.name || '');
@@ -127,20 +124,14 @@ const RoomPage: React.FC = () => {
     if (!isRoomInitialized || !user?.id) {
       return;
     }
-    // Establish WebSocket connection
-    const userId = user.id; // Replace with actual user ID from auth
-    const ws = new WebSocket(`${config.wsUrl}/game/${gameId}/room/${roomId}?user_id=${userId}`);
 
-    ws.onopen = () => {
-      console.log('WebSocket Connected');
-      setSocket(ws);
-    };
+    const connectAndSetupGame = async () => {
+      try {
+        await api.ws.connect(`/game/${gameId}/room/${roomId}`, {
+                  params: { user_id: user.id }
+                });
 
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-
-      switch(data.type) {
-        case 'chat':
+        api.ws.on('chat', (data) => {
           // Ensure we don't add duplicate messages
           setChatMessages(prev => {
             // Check if message already exists (by comparing content and timestamp)
@@ -159,13 +150,13 @@ const RoomPage: React.FC = () => {
               timestamp: data.message.timestamp
             }];
           });
-          break;
+        });
 
-        case 'user_joined':
+        api.ws.on('user_joined', (data) => {
           setRoomUsers(prev => [...prev, data.player]);
-          break;
+        });
 
-        case 'player_status_changed':
+        api.ws.on('player_status_changed', (data) => {
           setRoomUsers(prev =>
             prev.map(player =>
               player.user_id === data.user_id
@@ -173,31 +164,35 @@ const RoomPage: React.FC = () => {
                 : player
             )
           );
-          break;
+        });
 
-        case 'user_left':
+        api.ws.on('user_left', (data) => {
           setRoomUsers(prev => prev.filter(player => player.user_id !== data.user_id));
-          break;
-
-        case 'room_status_changed':
+        });
+        api.ws.on('room_status_changed', (data) => {
           setRoomStatus(data.status);
-          break;
+        });
+
+      } catch (error) {
+        console.error('Error connecting to game:', error);
+//         setError('Failed to connect to the game server.');
+        setIsLoading(false);
       }
     };
 
-    ws.onclose = () => {
-      console.log('WebSocket Disconnected');
-    };
+    connectAndSetupGame();
 
     // Cleanup on component unmount
     return () => {
-      ws.close();
+      if (api.ws) {
+        api.ws.disconnect();
+      };
     };
   }, [gameId, roomId, isRoomInitialized]);
 
   const sendChatMessage = () => {
-    if (socket && inputMessage.trim()) {
-      socket.send(JSON.stringify({
+    if (api.ws.socket && inputMessage.trim()) {
+      api.ws.send(JSON.stringify({
         type: 'chat',
         message: inputMessage,
         timestamp: new Date().toISOString()
@@ -210,8 +205,8 @@ const RoomPage: React.FC = () => {
   };
 
   const changeRoomStatus = (status: string) => {
-    if (socket) {
-      socket.send(JSON.stringify({
+    if (api.ws.socket) {
+      api.ws.send(JSON.stringify({
         type: 'room_status',
         status: status
       }));
@@ -219,8 +214,8 @@ const RoomPage: React.FC = () => {
   };
 
   const changePlayerStatus = (status: 'ready' | 'not_ready') => {
-    if (socket && user?.id) {
-      socket.send(JSON.stringify({
+    if (api.ws.socket && user?.id) {
+      api.ws.send(JSON.stringify({
         type: 'player_status',
         player_id: user.id,
         status: status
@@ -229,8 +224,8 @@ const RoomPage: React.FC = () => {
   };
 
   const startGame = () => {
-    if (socket) {
-      socket.send(JSON.stringify({
+    if (api.ws.socket) {
+      api.ws.send(JSON.stringify({
         type: 'room_status',
         status: 'in_progress'
       }));

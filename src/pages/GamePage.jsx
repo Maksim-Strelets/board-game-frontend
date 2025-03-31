@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Plus, ArrowLeft } from 'lucide-react';
 import CreateRoomModal from './../components/games/gamelist/CreateRoomModal';
 import { useAuth } from './../hooks/useAuth';
-import config from '../config'
+import api from '../utils/api'
 import './../styles/gamelistpage.css';
 
 const GameRoomsPage = () => {
@@ -21,13 +21,7 @@ const GameRoomsPage = () => {
     const fetchGameDetails = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(`${config.apiUrl}/board-games/${gameId}/`);
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch game details');
-        }
-
-        const data = await response.json();
+        const data = await api.get(`/board-games/${gameId}/`);
         setSelectedGame(data);
         setIsLoading(false);
       } catch (err) {
@@ -45,13 +39,7 @@ const GameRoomsPage = () => {
       if (!selectedGame) return;
 
       try {
-        const response = await fetch(`${config.apiUrl}/board-games/${selectedGame.id}/rooms`);
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch game rooms');
-        }
-
-        const data = await response.json();
+        const data = await api.get(`/board-games/${selectedGame.id}/rooms`);
 
         // Transform rooms to match the existing UI structure
         const transformedRooms = data.map(room => ({
@@ -81,23 +69,11 @@ const GameRoomsPage = () => {
     if (!selectedGame) return;
 
     try {
-      const response = await fetch(`${config.apiUrl}/board-games/${selectedGame.id}/rooms`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const newRoom = await api.post(`/board-games/${selectedGame.id}/rooms`, {
           name: roomName || `${selectedGame.name} Room`,
           game_id: selectedGame.id,
           max_players: maxPlayers
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create room');
-      }
-
-      const newRoom = await response.json();
+        });
 
       // Transform room to match existing UI structure
       const transformedRoom = {
@@ -124,24 +100,6 @@ const GameRoomsPage = () => {
     if (!selectedGame) return;
 
     try {
-      // Assuming you have a user ID from authentication
-      const userId = user.id; // Replace with actual user ID
-
-      const response = await fetch(`${config.apiUrl}/board-games/${selectedGame.id}/rooms/${roomId}/players`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          room_id: parseInt(roomId),
-          user_id: userId
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to join room');
-      }
-
       // Redirect to the room page
       navigate(`/game/${selectedGame.id}/room/${roomId}`);
     } catch (err) {

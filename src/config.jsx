@@ -1,8 +1,8 @@
 // src/config.js
 const config = {
   development: {
-    apiUrl: 'https://a2b3-37-24-74-241.ngrok-free.app',
-    wsUrl: 'wss://a2b3-37-24-74-241.ngrok-free.app/ws'
+    apiUrl: 'http://localhost:8000',
+    wsUrl: 'ws://localhost:8000/ws'
   },
   production: {
     apiUrl: 'https://your-production-api.com',

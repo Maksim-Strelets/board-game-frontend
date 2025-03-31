@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { AbstractBoardGame } from './../AbstractGame'
 import { useAuth } from './../../hooks/useAuth';
-import config from '../../config';
+import api from '../../utils/api';
 import './styles.css'
 
 // TicTacToe game implementation
@@ -41,7 +41,7 @@ class TicTacToeGame extends AbstractBoardGame {
     }
 
     // Send move to server via WebSocket
-    this.socket.send(JSON.stringify({
+    api.ws.send(JSON.stringify({
       type: 'game_move',
       game: 'tic_tac_toe',
       move: {
@@ -140,66 +140,62 @@ const GameBoard = () => {
   useEffect(() => {
     if (!user?.id) return;
 
-    const ws = new WebSocket(`${config.wsUrl}/game/${gameId}/room/${roomId}?user_id=${user.id}`);
-
-    ws.onopen = () => {
-      console.log('Game WebSocket Connected');
-      setSocket(ws);
-
-      // Request current game state
-      ws.send(JSON.stringify({
-        type: 'get_game_state'
-      }));
-    };
-
-    ws.onmessage = (event) => {
+    const connectAndSetupGame = async () => {
       try {
-        const data = JSON.parse(event.data);
+        // Connect to the game WebSocket
+        await api.ws.connect(`/game/${gameId}/room/${roomId}`, {
+          params: { user_id: user.id }
+        });
 
-        switch(data.type) {
-          case 'game_state':
-            if (gameRef.current) {
-              gameRef.current.initialize(data.state);
-              setGameState({...gameRef.current});
-            } else if (data.state.game === 'tic_tac_toe') {
-              // Initialize game if not already done
-              const gameInstance = new TicTacToeGame(ws, gameId, roomId, user.id);
-              gameInstance.initialize(data.state);
-              gameRef.current = gameInstance;
-              setGameState({...gameInstance});
-            }
-            setIsLoading(false);
-            break;
+        // Set up event listeners
+        api.ws.on('game_state', (data) => {
+          if (gameRef.current) {
+            gameRef.current.initialize(data.state);
+            setGameState({...gameRef.current});
+          } else if (data.state.game === 'tic_tac_toe') {
+            // Initialize game if not already done
+            const gameInstance = new TicTacToeGame(api.ws, gameId, roomId, user.id);
+            gameInstance.initialize(data.state);
+            gameRef.current = gameInstance;
+            setGameState({...gameInstance});
+          }
+          setIsLoading(false);
+        });
+        api.ws.on('game_update', (data) => {
+          if (gameRef.current) {
+            const updatedState = gameRef.current.handleGameUpdate(data.state);
+            setGameState({...updatedState});
+          }
+        });
 
-          case 'game_update':
-            if (gameRef.current) {
-              const updatedState = gameRef.current.handleGameUpdate(data.state);
-              setGameState({...updatedState});
-            }
-            break;
+        api.ws.on('game_error', (data) => {
+          setError(data.message);
+        });
 
-          case 'game_error':
-            setError(data.message);
-            break;
-        }
-      } catch (err) {
-        console.error('Error processing WebSocket message:', err);
-        setError('An error occurred while processing game data');
+        api.ws.on('error', () => {
+          setError('Connection error. Please try again later.');
+        });
+
+        api.ws.on('reconnect-failed', () => {
+          setError('Failed to reconnect to the game server.');
+        });
+
+        // Request current game state
+        api.ws.send({
+          type: 'get_game_state'
+        });
+      } catch (error) {
+        console.error('Error connecting to game:', error);
+        setError('Failed to connect to the game server.');
+        setIsLoading(false);
       }
     };
 
-    ws.onclose = () => {
-      console.log('Game WebSocket Disconnected');
-    };
-
-    ws.onerror = (error) => {
-      console.error('WebSocket Error:', error);
-      setError('Connection error. Please try again later.');
-    };
+    connectAndSetupGame();
 
     return () => {
-      if (ws) {
-        ws.close();
+      if (api.ws) {
+        api.ws.disconnect();
       }
     };
   }, [gameId, roomId, user?.id]);

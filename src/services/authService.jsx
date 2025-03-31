@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { jwtDecode as Decode } from 'jwt-decode';
-import config from '../config'
+import config from '../config';
 
 export const authService = {
   async login(username, password) {

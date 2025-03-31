@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import config from '../config'
+import api from '../utils/api'
 import '../styles/gamelistpage.css';
 
 const importAllLogos = (r) => {
@@ -34,13 +34,7 @@ const GameListPage = () => {
     const fetchGames = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('http://localhost:8000/board-games/');
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch games');
-        }
-
-        const data = await response.json();
+        const data = await api.get('/board-games/');
         setGames(data);
         setIsLoading(false);
       } catch (err) {
