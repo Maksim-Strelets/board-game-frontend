@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './../styles/gamelistpage.css';
+import config from '../config'
+import '../styles/gamelistpage.css';
 
 const importAllLogos = (r) => {
   const images = {};

@@ -1,0 +1,107 @@
+/* Game board styles */
+.game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.game-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.game-board-container {
+  width: 100%;
+  max-width: 400px;
+}
+
+.game-loading, .game-error {
+  padding: 2rem;
+  text-align: center;
+  font-size: 1.2rem;
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.game-error {
+  color: #e53e3e;
+}
+
+/* Tic Tac Toe specific styles */
+.ttt-board {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ttt-status {
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+  text-align: center;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.game-winner {
+  font-weight: bold;
+  color: #2b6cb0;
+}
+
+.your-turn {
+  color: #2f855a;
+  font-weight: bold;
+}
+
+.waiting {
+  color: #718096;
+}
+
+.ttt-grid {
+  display: flex;
+  flex-direction: column;
+  border: 2px solid #4a5568;
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+.ttt-row {
+  display: flex;
+}
+
+.ttt-square {
+  width: 80px;
+  height: 80px;
+  border: 1px solid #4a5568;
+  font-size: 2rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+}
+
+.ttt-square.filled {
+  cursor: not-allowed;
+}
+
+.ttt-square.active:hover {
+  background-color: #e2e8f0;
+}
+
+/* Media queries for responsive design */
+@media (max-width: 480px) {
+  .ttt-square {
+    width: 60px;
+    height: 60px;
+    font-size: 1.5rem;
+  }
+}

@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+
+import config from '../config'
 
 import './../styles/gameroom.css';
 import './../styles/chat.css';
@@ -20,11 +22,16 @@ const RoomPage: React.FC = () => {
   const [roomStatus, setRoomStatus] = useState('waiting');
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isRoomInitialized, setIsRoomInitialized] = useState(false);
 
   // Refs for chat scrolling and input
   const chatMessagesRef = useRef(null);
   const chatInputRef = useRef(null);
   const [isUserScrolling, setIsUserScrolling] = useState(false);
+
+  // Add this state for the dynamically loaded game component
+  const [GameComponent, setGameComponent] = useState(null);
+  const [gameLoadError, setGameLoadError] = useState(null);
 
   // Effect to handle auto-scrolling
   useEffect(() => {
@@ -57,15 +64,35 @@ const RoomPage: React.FC = () => {
     };
   }, []);
 
+      // Add this effect to dynamically import the game component based on gameId
+    useEffect(() => {
+      if (roomStatus === 'in_progress' && gameId) {
+        const loadGameComponent = async () => {
+          try {
+            // Dynamic import of the game component based on gameId
+            const GameModule = await import(`./../games/${gameId}/Game.jsx`);
+            setGameComponent(() => GameModule.default);
+            setGameLoadError(null);
+          } catch (err) {
+            console.error('Failed to load game component:', err);
+            setGameLoadError(`Failed to load game for ${gameId}`);
+          }
+        };
+
+        loadGameComponent();
+      }
+    }, [gameId, roomStatus]);
+
     // Fetch initial room data
   useEffect(() => {
     const fetchRoomData = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(`http://localhost:8000/board-games/${gameId}/rooms/${roomId}`);
+        console.log('room loading started');
+        const response = await fetch(`${config.apiUrl}/board-games/${gameId}/rooms/${roomId}`);
         const roomData = await response.json();
 
-        const chatResponse = await fetch(`http://localhost:8000/chat/room/${roomId}`);
+        const chatResponse = await fetch(`${config.apiUrl}/chat/room/${roomId}`);
         const chatData = await chatResponse.json();
 
         // Set initial room status and users
@@ -82,6 +109,9 @@ const RoomPage: React.FC = () => {
           message: msg.content,
           timestamp: msg.timestamp
         })));
+
+        setIsRoomInitialized(true);
+        console.log('room loaded');
       } catch (err) {
         console.error('Room data fetch error:', err);
       } finally {
@@ -90,12 +120,16 @@ const RoomPage: React.FC = () => {
     };
 
     fetchRoomData();
-  }, [roomId]);
+  }, [gameId, roomId]);
 
   useEffect(() => {
+    // Only establish the WebSocket connection if the room is initialized
+    if (!isRoomInitialized || !user?.id) {
+      return;
+    }
     // Establish WebSocket connection
     const userId = user.id; // Replace with actual user ID from auth
-    const ws = new WebSocket(`ws://localhost:8000/ws/game/${gameId}/room/${roomId}?user_id=${userId}`);
+    const ws = new WebSocket(`${config.wsUrl}/game/${gameId}/room/${roomId}?user_id=${userId}`);
 
     ws.onopen = () => {
       console.log('WebSocket Connected');
@@ -159,7 +193,7 @@ const RoomPage: React.FC = () => {
     return () => {
       ws.close();
     };
-  }, [gameId, roomId]);
+  }, [gameId, roomId, isRoomInitialized]);
 
   const sendChatMessage = () => {
     if (socket && inputMessage.trim()) {
@@ -277,6 +311,7 @@ const RoomPage: React.FC = () => {
                 Room Status: <span className="font-semibold capitalize">{roomStatus}</span>
               </div>
 
+              {roomStatus !== 'in_progress' ? (
                 <button
                   onClick={startGame}
                   disabled={
@@ -289,6 +324,28 @@ const RoomPage: React.FC = () => {
                 >
                   Start Game
                 </button>
+              ) : (
+                <div className="game-board-wrapper">
+                  {roomStatus === 'in_progress' && (
+                      <div className="game-board-wrapper">
+                        {gameLoadError ? (
+                          <div className="game-load-error p-4 text-red-600 bg-red-50 rounded border border-red-200">
+                            {gameLoadError}
+                          </div>
+                        ) : GameComponent ? (
+                          <Suspense fallback={<div className="text-center py-4">Loading game board...</div>}>
+                            <GameComponent
+                              roomId={roomId}
+                              user={user}
+                            />
+                          </Suspense>
+                        ) : (
+                          <div className="text-center py-4">Loading game board...</div>
+                        )}
+                      </div>
+                    )}
+                </div>
+              )}
             </div>
           </div>
           <div className="game-chat-section col-span-3">

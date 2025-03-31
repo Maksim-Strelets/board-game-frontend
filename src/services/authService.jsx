@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { jwtDecode as Decode } from 'jwt-decode';
-
-const API_BASE_URL = 'http://localhost:8000';
+import config from '../config'
 
 export const authService = {
   async login(username, password) {
@@ -11,7 +10,7 @@ export const authService = {
       formData.append('username', username);
       formData.append('password', password);
 
-      const response = await axios.post(`${API_BASE_URL}/auth/login`, formData, {
+      const response = await axios.post(`${config.apiUrl}/auth/login`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -32,7 +31,7 @@ export const authService = {
 
   async register(username, email, password) {
     try {
-      const response = await axios.post(`${API_BASE_URL}/auth/register`, {
+      const response = await axios.post(`${config.apiUrl}/auth/register`, {
         username,
         email,
         password

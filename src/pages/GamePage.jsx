@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Plus, ArrowLeft } from 'lucide-react';
 import CreateRoomModal from './../components/games/gamelist/CreateRoomModal';
 import { useAuth } from './../hooks/useAuth';
+import config from '../config'
 import './../styles/gamelistpage.css';
 
 const GameRoomsPage = () => {
@@ -20,7 +21,7 @@ const GameRoomsPage = () => {
     const fetchGameDetails = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(`http://localhost:8000/board-games/${gameId}/`);
+        const response = await fetch(`${config.apiUrl}/board-games/${gameId}/`);
 
         if (!response.ok) {
           throw new Error('Failed to fetch game details');
@@ -44,7 +45,7 @@ const GameRoomsPage = () => {
       if (!selectedGame) return;
 
       try {
-        const response = await fetch(`http://localhost:8000/board-games/${selectedGame.id}/rooms`);
+        const response = await fetch(`${config.apiUrl}/board-games/${selectedGame.id}/rooms`);
 
         if (!response.ok) {
           throw new Error('Failed to fetch game rooms');
@@ -80,7 +81,7 @@ const GameRoomsPage = () => {
     if (!selectedGame) return;
 
     try {
-      const response = await fetch(`http://localhost:8000/board-games/${selectedGame.id}/rooms`, {
+      const response = await fetch(`${config.apiUrl}/board-games/${selectedGame.id}/rooms`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -126,7 +127,7 @@ const GameRoomsPage = () => {
       // Assuming you have a user ID from authentication
       const userId = user.id; // Replace with actual user ID
 
-      const response = await fetch(`http://localhost:8000/board-games/${selectedGame.id}/rooms/${roomId}/players`, {
+      const response = await fetch(`${config.apiUrl}/board-games/${selectedGame.id}/rooms/${roomId}/players`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
