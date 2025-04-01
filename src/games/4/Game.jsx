@@ -13,6 +13,7 @@ class TicTacToeGame extends AbstractBoardGame {
     this.currentPlayer = null;
     this.winner = null;
     this.players = {};
+    this.symbols = {};
     this.mySymbol = null;
     this.isMyTurn = false;
   }
@@ -23,10 +24,11 @@ class TicTacToeGame extends AbstractBoardGame {
       this.currentPlayer = initialState.current_player;
       this.winner = initialState.winner;
       this.players = initialState.players;
+      this.symbols = initialState.symbols;
 
       // Determine player's symbol
-      Object.entries(this.players).forEach(([playerId, symbol]) => {
-        if (playerId === this.userId.toString()) {
+      Object.entries(this.symbols).forEach(([playerId, symbol]) => {
+        if (playerId == this.userId) {
           this.mySymbol = symbol;
         }
       });
@@ -41,7 +43,7 @@ class TicTacToeGame extends AbstractBoardGame {
     }
 
     // Send move to server via WebSocket
-    api.ws.send(JSON.stringify({
+    api.getWs().send(JSON.stringify({
       type: 'game_move',
       game: 'tic_tac_toe',
       move: {
@@ -57,6 +59,7 @@ class TicTacToeGame extends AbstractBoardGame {
     this.currentPlayer = gameData.current_player;
     this.winner = gameData.winner;
     this.players = gameData.players;
+    this.symbols = gameData.symbols;
 
     // Update if it's the player's turn
     this.isMyTurn = this.currentPlayer === this.userId.toString();
@@ -67,7 +70,8 @@ class TicTacToeGame extends AbstractBoardGame {
       winner: this.winner,
       isMyTurn: this.isMyTurn,
       mySymbol: this.mySymbol,
-      players: this.players
+      players: this.players,
+      symbols: this.symbols,
     };
   }
 }
@@ -94,7 +98,7 @@ const TicTacToeBoard = ({ gameInstance, onMakeMove }) => {
       <div className="ttt-status">
         {winner ? (
           <div className="game-winner">
-            {winner === 'draw' ? 'Game ended in a draw!' : `Player ${winner} wins!`}
+            {winner === 'draw' ? 'Game ended in a draw!' : `${gameInstance.players[winner].user_data.username} wins!`}
           </div>
         ) : (
           <div className="game-status">
@@ -143,45 +147,47 @@ const GameBoard = () => {
     const connectAndSetupGame = async () => {
       try {
         // Connect to the game WebSocket
-        await api.ws.connect(`/game/${gameId}/room/${roomId}`, {
-          params: { user_id: user.id }
-        });
+        if (!api.getWs().socket) {
+          await api.getWs().connect(`/game/${gameId}/room/${roomId}`, {
+            params: { user_id: user.id }
+          });
+        }
 
         // Set up event listeners
-        api.ws.on('game_state', (data) => {
+        api.getWs().on('game_state', (data) => {
           if (gameRef.current) {
             gameRef.current.initialize(data.state);
             setGameState({...gameRef.current});
           } else if (data.state.game === 'tic_tac_toe') {
             // Initialize game if not already done
-            const gameInstance = new TicTacToeGame(api.ws, gameId, roomId, user.id);
+            const gameInstance = new TicTacToeGame(api.getWs(), gameId, roomId, user.id);
             gameInstance.initialize(data.state);
             gameRef.current = gameInstance;
             setGameState({...gameInstance});
           }
           setIsLoading(false);
         });
-        api.ws.on('game_update', (data) => {
+        api.getWs().on('game_update', (data) => {
           if (gameRef.current) {
             const updatedState = gameRef.current.handleGameUpdate(data.state);
             setGameState({...updatedState});
           }
         });
 
-        api.ws.on('game_error', (data) => {
+        api.getWs().on('game_error', (data) => {
           setError(data.message);
         });
 
-        api.ws.on('error', () => {
+        api.getWs().on('error', () => {
           setError('Connection error. Please try again later.');
         });
 
-        api.ws.on('reconnect-failed', () => {
+        api.getWs().on('reconnect-failed', () => {
           setError('Failed to reconnect to the game server.');
         });
 
         // Request current game state
-        api.ws.send({
+        api.getWs().send({
           type: 'get_game_state'
         });
       } catch (error) {
@@ -194,8 +200,8 @@ const GameBoard = () => {
     connectAndSetupGame();
 
     return () => {
-      if (api.ws) {
-        api.ws.disconnect();
+      if (api.getWs()) {
+        api.getWs().disconnect();
       }
     };
   }, [gameId, roomId, user?.id]);

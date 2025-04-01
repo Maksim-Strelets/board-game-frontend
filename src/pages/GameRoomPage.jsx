@@ -33,6 +33,9 @@ const RoomPage: React.FC = () => {
   const [GameComponent, setGameComponent] = useState(null);
   const [gameLoadError, setGameLoadError] = useState(null);
 
+  const [gameStats, setGameStats] = useState(null);
+  const [showStatsPopup, setShowStatsPopup] = useState(false);
+
   // Effect to handle auto-scrolling
   useEffect(() => {
     const chatContainer = chatMessagesRef.current;
@@ -127,11 +130,13 @@ const RoomPage: React.FC = () => {
 
     const connectAndSetupGame = async () => {
       try {
-        await api.ws.connect(`/game/${gameId}/room/${roomId}`, {
+        if (!api.getWs().socket) {
+          await api.getWs().connect(`/game/${gameId}/room/${roomId}`, {
                   params: { user_id: user.id }
                 });
+        }
 
-        api.ws.on('chat', (data) => {
+        api.getWs().on('chat', (data) => {
           // Ensure we don't add duplicate messages
           setChatMessages(prev => {
             // Check if message already exists (by comparing content and timestamp)
@@ -152,11 +157,11 @@ const RoomPage: React.FC = () => {
           });
         });
 
-        api.ws.on('user_joined', (data) => {
+        api.getWs().on('user_joined', (data) => {
           setRoomUsers(prev => [...prev, data.player]);
         });
 
-        api.ws.on('player_status_changed', (data) => {
+        api.getWs().on('player_status_changed', (data) => {
           setRoomUsers(prev =>
             prev.map(player =>
               player.user_id === data.user_id
@@ -166,11 +171,18 @@ const RoomPage: React.FC = () => {
           );
         });
 
-        api.ws.on('user_left', (data) => {
+        api.getWs().on('user_left', (data) => {
           setRoomUsers(prev => prev.filter(player => player.user_id !== data.user_id));
         });
-        api.ws.on('room_status_changed', (data) => {
+
+        api.getWs().on('room_status_changed', (data) => {
           setRoomStatus(data.status);
+        });
+
+        api.getWs().on('game_ended', (data) => {
+          setRoomStatus('ended');
+          setGameStats(data.stats);
+          setShowStatsPopup(true);
         });
 
       } catch (error) {
@@ -184,15 +196,19 @@ const RoomPage: React.FC = () => {
 
     // Cleanup on component unmount
     return () => {
-      if (api.ws) {
-        api.ws.disconnect();
+      if (api.getWs()) {
+        api.getWs().disconnect();
       };
     };
   }, [gameId, roomId, isRoomInitialized]);
 
+  const closeStatsPopup = () => {
+    setShowStatsPopup(false);
+  };
+
   const sendChatMessage = () => {
-    if (api.ws.socket && inputMessage.trim()) {
-      api.ws.send(JSON.stringify({
+    if (api.getWs().socket && inputMessage.trim()) {
+      api.getWs().send(JSON.stringify({
         type: 'chat',
         message: inputMessage,
         timestamp: new Date().toISOString()
@@ -205,8 +221,8 @@ const RoomPage: React.FC = () => {
   };
 
   const changeRoomStatus = (status: string) => {
-    if (api.ws.socket) {
-      api.ws.send(JSON.stringify({
+    if (api.getWs().socket) {
+      api.getWs().send(JSON.stringify({
         type: 'room_status',
         status: status
       }));
@@ -214,8 +230,8 @@ const RoomPage: React.FC = () => {
   };
 
   const changePlayerStatus = (status: 'ready' | 'not_ready') => {
-    if (api.ws.socket && user?.id) {
-      api.ws.send(JSON.stringify({
+    if (api.getWs().socket && user?.id) {
+      api.getWs().send(JSON.stringify({
         type: 'player_status',
         player_id: user.id,
         status: status
@@ -224,8 +240,8 @@ const RoomPage: React.FC = () => {
   };
 
   const startGame = () => {
-    if (api.ws.socket) {
-      api.ws.send(JSON.stringify({
+    if (api.getWs().socket) {
+      api.getWs().send(JSON.stringify({
         type: 'room_status',
         status: 'in_progress'
       }));
@@ -262,11 +278,13 @@ const RoomPage: React.FC = () => {
               >
                 <div className="player-name-container flex-grow">
                   <div className="player-username">{player.user_data.username}</div>
-                  <div className={`player-status player-status-${player.status}`}>
-                    {player.status ? player.status.replace('_', ' ') : 'Waiting'}
-                  </div>
+                  {roomStatus === 'waiting' && (
+                    <div className={`player-status player-status-${player.status}`}>
+                      {player.status ? player.status.replace('_', ' ') : 'Waiting'}
+                    </div>
+                  )}
                   <div className="player-badges">
-                    {player.user_id === roomUsers[0]?.user_id && (
+                    {roomStatus === 'waiting' && player.user_id === roomUsers[0]?.user_id && (
                       <span className="player-host-badge">Host</span>
                     )}
                     {user?.id === player.user_id && (
@@ -274,7 +292,7 @@ const RoomPage: React.FC = () => {
                     )}
                   </div>
                 </div>
-                {user?.id === player.user_id && (
+                {user?.id === player.user_id && roomStatus === 'waiting' && (
                   <div className="ml-auto">
                     {player.status === 'not_ready' ? (
                       <button
@@ -301,12 +319,16 @@ const RoomPage: React.FC = () => {
           {/* Game and Chat Section */}
           <div className="game-chat-section col-span-2">
             <div className="room-info bg-white border rounded-lg shadow-md p-4 mb-4">
-              <h1 className="page-heading mb-3">Game Room {roomName}</h1>
-              <div className="text-lg text-gray-700 mb-3">
-                Room Status: <span className="font-semibold capitalize">{roomStatus}</span>
+              <div className="flex justify-between items-center mb-3">
+                <h1 className="page-heading mb-0">Game Room {roomName}</h1>
+                <div className="flex items-center">
+                  <span className={`room-status room-status-${roomStatus}`}>
+                    {roomStatus.replace('_', ' ')}
+                  </span>
+                </div>
               </div>
 
-              {roomStatus !== 'in_progress' ? (
+              {roomStatus === 'waiting' ? (
                 <button
                   onClick={startGame}
                   disabled={
@@ -401,6 +423,71 @@ const RoomPage: React.FC = () => {
               </div>
           </div>
         </div>
+        {/* Game Stats Popup */}
+        {showStatsPopup && gameStats && (
+          <div className="stats-popup-overlay">
+            <div className="stats-popup">
+              <div className="stats-popup-header">
+                <h2>Game Results</h2>
+                <button className="stats-close-btn" onClick={closeStatsPopup}>×</button>
+              </div>
+              <div className="stats-popup-body">
+                <h3>Winner: {gameStats.winner?.user_data.username || 'Draw'}</h3>
+
+                <div className="stats-table">
+                  <div className="stats-table-header">
+                    <div className="stats-cell">Player</div>
+                    <div className="stats-cell">Score</div>
+                    <div className="stats-cell">Result</div>
+                  </div>
+                  {gameStats.players.map((player) => (
+                    <div
+                      key={player.user_id}
+                      className={`stats-table-row ${player.is_winner ? 'stats-winner' : ''}`}
+                    >
+                      <div className="stats-cell">{player.username}</div>
+                      <div className="stats-cell">{player.score}</div>
+                      <div className="stats-cell">
+                        {player.is_winner ? '🏆 Winner' : ''}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="stats-footer">
+                  <p>Game duration: {
+                    (() => {
+                      const totalSeconds = gameStats.duration;
+                      const hours = Math.floor(totalSeconds / 3600);
+                      const minutes = Math.floor((totalSeconds % 3600) / 60);
+                      const seconds = totalSeconds % 60;
+
+                      let durationText = '';
+
+                      if (hours > 0) {
+                        durationText += `${hours} Hours `;
+                      }
+
+                      if (minutes > 0 || hours > 0) {
+                        durationText += `${minutes} Minutes `;
+                      }
+
+                      durationText += `${seconds} Seconds`;
+
+                      return durationText;
+                    })()
+                  }</p>
+                  <button
+                    className="btn btn-primary"
+                    onClick={closeStatsPopup}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
 };

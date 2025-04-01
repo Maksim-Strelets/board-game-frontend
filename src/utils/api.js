@@ -115,7 +115,7 @@ class WebSocketManager {
 
         this.socket.onclose = (event) => {
           console.log(`WebSocket closed: ${event.code} ${event.reason}`);
-          this._handleReconnect(endpoint, options);
+//          this._handleReconnect(endpoint, options); TODO: reconnect ?
 
           // Notify any registered close listeners
           if (this.listeners.close) {
@@ -256,8 +256,14 @@ class WebSocketManager {
   }
 }
 
-// Create and export a singleton instance of the WebSocket manager
-export const wsManager = new WebSocketManager();
+let wsManagerInstance = null;
+
+const getWsManager = () => {
+  if (!wsManagerInstance) {
+    wsManagerInstance = new WebSocketManager();
+  }
+  return wsManagerInstance;
+};
 
 // Export convenience methods for different HTTP methods
 export const api = {
@@ -285,7 +291,7 @@ export const api = {
   fetch: fetchWithAuth,
 
   // WebSocket manager
-  ws: wsManager
+  getWs: () => getWsManager(),
 };
 
 export default api;
