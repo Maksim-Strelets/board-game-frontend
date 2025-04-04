@@ -1,0 +1,759 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { CircleUser, Settings, Info, Heart, Search, RefreshCw } from 'lucide-react';
+import api from '../../utils/api';
+import './Game.css';
+
+const Game = ({ roomId, user }) => {
+  const [gameState, setGameState] = useState(null);
+  const [selectedCard, setSelectedCard] = useState(null);
+  const [selectedAction, setSelectedAction] = useState(null);
+  const [targetPlayer, setTargetPlayer] = useState(null);
+  const [targetCard, setTargetCard] = useState(null);
+  const [isZoomed, setIsZoomed] = useState(null);
+  const [showRecipe, setShowRecipe] = useState(false);
+  const [showRecipePopup, setShowRecipePopup] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // References for card containers
+  const handContainerRef = useRef(null);
+
+  // Effect to handle websocket communication and game state updates
+  useEffect(() => {
+    // Initial game state fetch
+    const fetchGameState = async () => {
+      try {
+        setLoading(true);
+        await api.getWs().send(JSON.stringify({
+          type: 'get_game_state'
+        }));
+      } catch (err) {
+        console.error('Error fetching game state:', err);
+        setError('Failed to connect to the game');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Listen for game state updates from WebSocket
+    const handleWebSocketMessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+
+        if (data.type === 'game_state' || data.type === 'game_update') {
+          setGameState(data.state);
+          setLoading(false);
+        } else if (data.type === 'game_error') {
+          setError(data.message);
+        } else if (data.type === 'special_effect') {
+          // Handle special effects like "Defense Request"
+          if (data.effect === 'defense_request') {
+            handleDefenseRequest(data);
+          }
+        } else if (data.type === 'recipe_completed') {
+          // Someone completed their recipe
+          const message = data.player_id === user.id
+            ? "You completed your recipe first!"
+            : `Player ${data.player_id} completed their recipe!`;
+          alert(message + " Everyone gets one more turn.");
+        }
+      } catch (err) {
+        console.error('Error processing websocket message:', err);
+      }
+    };
+
+    // Set up WebSocket listeners
+    const setupWebSocketListeners = () => {
+      if (api.getWs().socket) {
+        api.getWs().socket.addEventListener('message', handleWebSocketMessage);
+
+        // Request initial game state
+        fetchGameState();
+      }
+    };
+
+    // Set up listeners when component mounts or WebSocket changes
+    setupWebSocketListeners();
+
+    // Clean up event listeners on unmount
+    return () => {
+      if (api.getWs().socket) {
+        api.getWs().socket.removeEventListener('message', handleWebSocketMessage);
+      }
+    };
+  }, [roomId, user.id]);
+
+  // Handle defense request from another player
+  const handleDefenseRequest = (data) => {
+    if (!data.request_id) return;
+
+    // Check if player has Sour Cream in hand
+    const hasSourCream = gameState.your_hand && gameState.your_hand.some(card =>
+      card.id === 'sour_cream' && card.type === 'special' && card.effect === 'defense'
+    );
+
+    if (!hasSourCream) {
+      // No defense card, automatically decline
+      api.getWs().send(JSON.stringify({
+        type: 'defense_response',
+        request_id: data.request_id,
+        use_defense: false
+      }));
+      return;
+    }
+
+    // Ask player if they want to use Sour Cream
+    const useDefense = window.confirm(
+      `Player ${data.attacker} is targeting you with ${data.card?.name || 'a special card'}. ` +
+      'Do you want to use Sour Cream to defend?'
+    );
+
+    if (useDefense) {
+      api.getWs().send(JSON.stringify({
+        type: 'defense_response',
+        request_id: data.request_id,
+        use_defense: true
+      }));
+    } else {
+      api.getWs().send(JSON.stringify({
+        type: 'defense_response',
+        request_id: data.request_id,
+        use_defense: false
+      }));
+    }
+  };
+
+  // Make a move in the game
+  const makeMove = (moveData) => {
+    if (!api.getWs().socket) return;
+
+    api.getWs().send(JSON.stringify({
+      type: 'game_move',
+      move: moveData
+    }));
+
+    // Reset selections after move
+    setSelectedCard(null);
+    setSelectedAction(null);
+    setTargetPlayer(null);
+    setTargetCard(null);
+  };
+
+  // Handle card selection from hand
+  const handleCardSelect = (card) => {
+    if (selectedCard && selectedCard.id === card.id) {
+      setSelectedCard(null); // Deselect if already selected
+    } else {
+      setSelectedCard(card);
+
+      // Determine available actions based on card type
+      if (card.type === 'special') {
+        setSelectedAction('play_special');
+      } else {
+        setSelectedAction('add_ingredient');
+      }
+    }
+  };
+
+  // Handle adding an ingredient to the borsht
+  const handleAddIngredient = () => {
+    if (!isCurrentPlayerTurn || !selectedCard || selectedCard.type === 'special') {
+      return;
+    }
+
+    makeMove({
+      action: 'add_ingredient',
+      card_id: selectedCard.id
+    });
+  };
+
+  // Handle playing a special card
+  const handlePlaySpecial = () => {
+    if (!isCurrentPlayerTurn || !selectedCard || !selectedCard.effect) {
+      alert('Please select a special card first');
+      return;
+    }
+
+    let moveData = {
+      action: 'play_special',
+      card_id: selectedCard.id
+    };
+
+    // Add additional data based on the card effect
+    switch (selectedCard.effect) {
+      case 'steal_or_discard':
+        if (!targetPlayer || !targetCard) {
+          alert('Please select a player and a card from their borsht');
+          return;
+        }
+
+        // Ask user whether to steal or discard
+        const actionChoice = window.confirm(
+          `Do you want to steal ${targetCard} from Player ${targetPlayer}?\n` +
+          'Click OK to steal, or Cancel to discard'
+        );
+
+        moveData = {
+          ...moveData,
+          target_player: targetPlayer,
+          target_card: targetCard,
+          action_type: actionChoice ? 'steal' : 'discard'
+        };
+        break;
+
+      case 'discard_or_take':
+        // Ask user whether to discard or take
+        const effectChoice = window.confirm(
+          'Choose an effect for Black Pepper:\n' +
+          'Click OK to discard 1 ingredient from each opponent\'s borsht\n' +
+          'Click Cancel to take 1 card from each opponent\'s hand'
+        );
+
+        moveData = {
+          ...moveData,
+          effect_choice: effectChoice ? 'discard_from_borsht' : 'take_from_hand'
+        };
+        break;
+
+      case 'take_market':
+        if (!market || market.length === 0) {
+          alert('No cards in the market to take');
+          return;
+        }
+
+        // In a full implementation, you would have UI to select cards from market
+        alert('Select 2 cards from the market to take. (UI for this selection would be implemented in a full version)');
+
+        // For demo purposes, just take the first 2 cards if available
+        const marketCardsToTake = market.slice(0, 2).map(card => card.id);
+        if (marketCardsToTake.length < 2) {
+          alert('Not enough cards in the market');
+          return;
+        }
+
+        moveData = {
+          ...moveData,
+          market_cards: marketCardsToTake
+        };
+        break;
+
+      case 'take_discard':
+        if (!discardTop) {
+          alert('No cards in the discard pile');
+          return;
+        }
+
+        // For demo purposes, just take the top card
+        moveData = {
+          ...moveData,
+          discard_card: discardTop.id
+        };
+        break;
+
+      case 'look_top_5':
+        // This would need a special UI in a full implementation
+        alert('This card allows you to look at the top 5 cards of the deck and take 2. (UI for this selection would be implemented in a full version)');
+        break;
+
+      case 'refresh_market':
+        // No additional data needed
+        break;
+
+      case 'defense':
+        alert('Sour Cream is used defensively when targeted by another player. Hold onto it until needed.');
+        return; // Don't play this card proactively
+
+      default:
+        // No special handling needed
+        break;
+    }
+
+    makeMove(moveData);
+  };
+
+  // Handle drawing cards
+  const handleDrawCards = () => {
+    if (!isCurrentPlayerTurn) return;
+
+    makeMove({
+      action: 'draw_cards'
+    });
+  };
+
+  // Handle exchanging ingredients with the market
+  const handleExchange = () => {
+    if (!isCurrentPlayerTurn) return;
+
+    if (!selectedCard) {
+      alert('Please select a card from your hand first');
+      return;
+    }
+
+    // Show modal or implement UI for exchange
+    // For now, this is a simplified implementation
+    const confirmExchange = window.confirm(`Would you like to exchange the selected card (${selectedCard.id}) for cards from the market?`);
+
+    if (confirmExchange) {
+      // In a real implementation, you would have UI to select market cards
+      // For now, we'll just show a message
+      alert('Exchange functionality requires additional UI implementation. This would allow you to select cards from the market whose total value does not exceed your card value.');
+    }
+  };
+
+  // Handle card selection from another player's borsht
+  const handleSelectTargetCard = (playerId, cardId) => {
+    setTargetPlayer(playerId);
+    setTargetCard(cardId);
+  };
+
+  const canAddCardToBorsht = (card) => {
+      if (!card) return false;
+
+      // Special cards cannot be added to borsht
+      if (card.type === 'special') return false;
+
+      // Check if the card is already in the borsht
+      if (borshtCards && borshtCards.some(borshtCard => borshtCard.id === card.id)) {
+        return false; // Card is already in the borsht, can't add duplicates
+      }
+
+      if (card.type === 'extra') {
+        return true;
+      }
+
+      // If card is rare or regular, check if it's in the recipe ingredients
+      if (card.type === 'rare' || card.type === 'regular') {
+        // If no recipe or no ingredients, cannot add rare/regular cards
+        if (!recipe || !recipe.ingredients || !recipe.ingredients.length) {
+          return false;
+        }
+
+
+        // Check if card id is in recipe ingredients (case insensitive)
+        return recipe.ingredients.some(ingredient =>
+          ingredient.toLowerCase() === card.id.toLowerCase()
+        );
+      }
+
+      // Default to false for any other card types
+      return false;
+    };
+
+  // Render loading state
+  if (loading) {
+    return (
+      <div className="borsht-loading">
+        <div className="borsht-loading-spinner"></div>
+        <p>Loading your borsht game...</p>
+      </div>
+    );
+  }
+
+  // Render error state
+  if (error) {
+    return (
+      <div className="borsht-error">
+        <div className="borsht-error-title">Error</div>
+        <p>{error}</p>
+        <button
+          onClick={async () => {
+            setError(null);
+            setLoading(true);
+            await api.getWs().send(JSON.stringify({
+              type: 'get_game_state'
+            }));
+            setLoading(false);
+          }}
+          className="borsht-button"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  // Render when no game state is available
+  if (!gameState) {
+    return (
+      <div className="borsht-loading">
+        <p>Waiting for game to start...</p>
+        <p className="text-sm mt-2">Get ready to cook the best borsht!</p>
+      </div>
+    );
+  }
+
+  const isCurrentPlayerTurn = gameState.current_player === user.id;
+  const handCards = gameState.your_hand || [];
+  const borshtCards = gameState.your_borsht || [];
+  const recipe = gameState.your_recipe || {};
+  const market = gameState.market || [];
+  const discardTop = gameState.discard_pile_top;
+  const otherPlayers = gameState.players || {};
+
+  return (
+    <div className="borsht-game-container">
+      {/* Game header */}
+      <div className="borsht-header">
+        <h2>{isCurrentPlayerTurn ? "Your turn" : `${gameState.players[gameState.current_player].username}'s turn`}</h2>
+        <div className="borsht-status">
+          <span>Cards in deck: {gameState.cards_in_deck || 0}</span>
+          <span>Market: {market.length} / {gameState.market_limit || 8}</span>
+          {gameState.game_ending && <span className="borsht-final-round">Final Round!</span>}
+          {gameState.is_game_over && <span>Winner: {gameState.winner === user.id ? 'You!' : `Player ${gameState.winner}`}</span>}
+        </div>
+        <div className="borsht-actions">
+          <button
+            onClick={() => setShowRecipe(!showRecipe)}
+            className="borsht-button"
+            title="Show/hide recipe"
+          >
+            <Info size={20} />
+          </button>
+          <button className="borsht-button" title="Game settings">
+            <Settings size={20} />
+          </button>
+        </div>
+      </div>
+
+      {/* Game layout */}
+      <div className="borsht-game-layout">
+        {/* Other players section */}
+        <div className="borsht-players-section">
+          {Object.entries(otherPlayers).map(([playerId, playerData]) => (
+            <div
+              key={playerId}
+              className={`borsht-player-card ${gameState.current_player === parseInt(playerId) ? 'current' : ''}`}
+            >
+              <div className="borsht-player-header">
+                <div className="borsht-player-name">
+                  <CircleUser className="borsht-player-icon" />
+                  <span>Player {playerId}</span>
+                </div>
+                <div className="borsht-player-stats">
+                  <span>Cards: {playerData.hand_size || 0}</span>
+                </div>
+              </div>
+              <div className="borsht-borsht-container">
+                {playerData.borsht && playerData.borsht.map((card) => (
+                  <div
+                    key={card.id}
+                    className={`borsht-card ${targetCard === card.id ? 'target-selected' : ''}`}
+                    style={{backgroundImage: `url('/games/borscht/cards/${card.id}.png')`}}
+                    onClick={() => handleSelectTargetCard(parseInt(playerId), card.id)}
+                    onMouseEnter={() => setIsZoomed(card.id)}
+                    onMouseLeave={() => setIsZoomed(null)}
+                  >
+                    {isZoomed === card.id && (
+                      <div className="borsht-card-tooltip">
+                        <strong>{card.name || card.id}</strong>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {(!playerData.borsht || playerData.borsht.length === 0) && (
+                  <div className="borsht-empty-pot">
+                    No ingredients yet
+                  </div>
+                )}
+              </div>
+              {gameState.recipes_revealed && playerData.recipe && (
+                <div className="borsht-recipe-info">
+                  Recipe: {playerData.recipe.name}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Market section */}
+        <div className="borsht-market-section">
+          <div className="borsht-market-header-vertical">
+            <div className="borsht-market-title">Market</div>
+            {gameState.market_limit < 8 && (
+              <div className="borsht-market-limit">
+                Limited: {market.length}/{gameState.market_limit}
+              </div>
+            )}
+          </div>
+
+          <div className="borsht-market-layout">
+            <div className="borsht-market-cards">
+              {market.map((card) => (
+                <div
+                  key={card.id}
+                  className={`borsht-card ${card.type === 'special' ? 'borsht-special-effect' : ''}`}
+                  style={{backgroundImage: `url('/games/borscht/cards/${card.id}.png')`}}
+                  onMouseEnter={() => setIsZoomed(card.id)}
+                  onMouseLeave={() => setIsZoomed(null)}
+                >
+                  {isZoomed === card.id && (
+                    <div className="borsht-card-tooltip">
+                      <strong>{card.name || card.id}</strong>
+                      {card.type === 'special' && <p>{card.effect_description || card.effect}</p>}
+                    </div>
+                  )}
+                </div>
+              ))}
+              {market.length === 0 && (
+                <div className="borsht-empty-market">Market is empty</div>
+              )}
+            </div>
+
+            <div className="borsht-decks-area">
+              <div className="borsht-deck-container">
+                <div
+                  className="borsht-deck"
+                  style={{backgroundImage: `url('/games/borscht/cards/cover.png')`}}
+                  title="Ingredient Deck"
+                >
+                  <div className="borsht-pile-count">
+                    {gameState.cards_in_deck || 0}
+                  </div>
+                </div>
+                <div className="borsht-deck-label">Draw Pile</div>
+              </div>
+
+              {discardTop && (
+                <div className="borsht-deck-container">
+                  <div
+                    className="borsht-discard"
+                    style={{backgroundImage: `url('/games/borscht/cards/${discardTop.id}.png')`}}
+                    title="Discard Pile"
+                  >
+                    <div className="borsht-pile-count">
+                      {gameState.discard_pile_size || 0}
+                    </div>
+                  </div>
+                  <div className="borsht-deck-label">Discard Pile</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Player's area with recipe, borsht, hand, and actions */}
+        <div className="borsht-player-board-section">
+          <div className="borsht-player-board">
+            {/* Column 1: Recipe, pot and hand */}
+            <div className="borsht-player-column">
+              {/* Row 1: Recipe and Pot */}
+              <div className="borsht-recipe-pot-row">
+                {/* Recipe card area */}
+                <div className="borsht-recipe-container">
+                  { recipe && (
+                    <div
+                      className="borsht-recipe-card"
+                      style={{
+                        backgroundImage: `url('/games/borscht/recipes/${recipe.id || 'default'}.png')`
+                      }}
+                      onClick={() => setShowRecipePopup(true)}
+                    >
+                    </div>
+                  )}
+                </div>
+
+                {/* Player's borsht */}
+                <div className="borsht-pot-container">
+                  <h3 className="borsht-section-title">Your Borsht</h3>
+                  <div className="borsht-pot">
+                    {borshtCards.map((card) => (
+                      <div
+                        key={card.id}
+                        className="borsht-card"
+                        style={{backgroundImage: `url('/games/borscht/cards/${card.id}.png')`}}
+                        onMouseEnter={() => setIsZoomed(card.id)}
+                        onMouseLeave={() => setIsZoomed(null)}
+                      >
+                        {isZoomed === card.id && (
+                          <div className="borsht-card-tooltip">
+                            <strong>{card.name || card.id}</strong>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {borshtCards.length === 0 && (
+                      <div className="borsht-empty-pot">
+                        Add ingredients here
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Active shkvarkas if any */}
+                  {gameState.active_shkvarkas && gameState.active_shkvarkas.length > 0 && (
+                    <div className="borsht-active-effects">
+                      <h4>Active Effects</h4>
+                      <div className="borsht-effect-badges">
+                        {gameState.active_shkvarkas.map((shkvarka, idx) => (
+                          <div
+                            key={idx}
+                            className="borsht-effect-badge negative"
+                          >
+                            {shkvarka.name}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Row 2: Hand */}
+              <div className="borsht-hand-container">
+                <div className="borsht-hand-header">
+                  <div className="borsht-hand-title">Your Hand ({handCards.length}/8)</div>
+                  {handCards.length > 8 && <div className="borsht-hand-warning">Too many cards!</div>}
+                </div>
+                <div
+                  ref={handContainerRef}
+                  className="borsht-hand-cards"
+                >
+                  {handCards.length === 0 ? (
+                    <div className="borsht-empty-hand">Draw cards to start playing</div>
+                  ) : (
+                    handCards.map((card) => (
+                      <div
+                        key={card.id}
+                        className={`borsht-card ${selectedCard && selectedCard.id === card.id ? 'selected' : ''}
+                          ${card.type === 'special' ? 'borsht-special-effect' : ''}`}
+                        onClick={() => handleCardSelect(card)}
+                        style={{backgroundImage: `url('/games/borscht/cards/${card.id}.png')`}}
+                        onMouseEnter={() => setIsZoomed(card.id)}
+                        onMouseLeave={() => setIsZoomed(null)}
+                      >
+                        {isZoomed === card.id && (
+                          <div className="borsht-card-tooltip">
+                            <strong>{card.name || card.id}</strong>
+                            {card.type === 'special' && <p>{card.effect_description || card.effect}</p>}
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Column 2: Actions */}
+            <div className="borsht-actions-container">
+              <div className="borsht-actions-panel">
+                <div className="borsht-actions-title">Actions</div>
+                <div className="borsht-action-buttons">
+                  <button
+                      className="borsht-action-button"
+                      onClick={handleAddIngredient}
+                      disabled={!isCurrentPlayerTurn || !selectedCard || !canAddCardToBorsht(selectedCard)}
+                      title={
+                        !isCurrentPlayerTurn
+                          ? "Not your turn"
+                          : !selectedCard
+                            ? "Select a card first"
+                            : selectedCard.type === 'special'
+                              ? "Can't add special cards to borsht"
+                              : borshtCards.some(borshtCard => borshtCard.id === selectedCard.id)
+                                ? "This ingredient is already in your borsht"
+                              : (selectedCard.type === 'rare' || selectedCard.type === 'regular') &&
+                                !recipe.ingredients?.some(i => i.toLowerCase() === selectedCard.id.toLowerCase())
+                                ? "This ingredient is not in your recipe"
+                                : "Add selected ingredient to your borsht"
+                      }
+                  >
+                    Add Ingredient
+                  </button>
+                  <button
+                    className="borsht-action-button"
+                    onClick={handleDrawCards}
+                    disabled={!isCurrentPlayerTurn}
+                    title={!isCurrentPlayerTurn ? "Not your turn" : "Draw 2 cards from the deck"}
+                  >
+                    Draw 2 Cards
+                  </button>
+                  <button
+                    className="borsht-action-button"
+                    onClick={handlePlaySpecial}
+                    disabled={!isCurrentPlayerTurn || !selectedCard || selectedCard.type !== 'special'}
+                    title={!isCurrentPlayerTurn ? "Not your turn" : !selectedCard ? "Select a special card first" : selectedCard.type !== 'special' ? "Selected card is not a special card" : "Play the selected special card"}
+                  >
+                    Play Special
+                  </button>
+                  <button
+                    className="borsht-action-button"
+                    onClick={handleExchange}
+                    disabled={!isCurrentPlayerTurn}
+                    title={!isCurrentPlayerTurn ? "Not your turn" : "Exchange cards with the market"}
+                  >
+                    Exchange
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Game messages */}
+      {isCurrentPlayerTurn && (
+        <div className="borsht-game-message">
+          Your turn! Select a card and choose an action.
+        </div>
+      )}
+
+      {/* Recipe Popup */}
+        {showRecipePopup && recipe && (
+          <div className="borsht-recipe-popup-overlay" onClick={() => setShowRecipePopup(false)}>
+            <div className="borsht-recipe-popup" onClick={(e) => e.stopPropagation()}>
+              <button
+                className="borsht-recipe-popup-close"
+                onClick={() => setShowRecipePopup(false)}
+              >
+                ×
+              </button>
+              <div
+                className="borsht-recipe-popup-image"
+                style={{
+                  backgroundImage: `url('/games/borscht/recipes/${recipe.id || 'default'}_full.png')`
+                }}
+              >
+              </div>
+            </div>
+          </div>
+        )}
+
+      {/* Game over popup */}
+      {gameState.is_game_over && (
+        <div className="borsht-game-over">
+          <div className="borsht-game-over-modal">
+            <div className="borsht-winner">
+              {gameState.winner === user.id ? 'You win!' : `Player ${gameState.winner} wins!`}
+            </div>
+            <div className="borsht-scores">
+              {gameState.scores && Object.entries(gameState.scores).sort((a, b) => b[1] - a[1]).map(([playerId, score]) => (
+                <div key={playerId} className={`borsht-score-item ${gameState.winner === parseInt(playerId) ? 'winner' : ''}`}>
+                  <div className="borsht-score-player">
+                    {parseInt(playerId) === user.id ? 'You' : `Player ${playerId}`}
+                  </div>
+                  <div className="borsht-score-value">{score} points</div>
+                </div>
+              ))}
+            </div>
+            <button
+              className="borsht-button"
+              onClick={() => window.location.reload()}
+            >
+              Play Again
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* First finisher notification */}
+      {gameState.first_finisher && !gameState.is_game_over && (
+        <div className={`borsht-finisher-notification ${gameState.first_finisher === user.id ? 'you' : ''}`}>
+          {gameState.first_finisher === user.id ? 'You completed your recipe first!' : `Player ${gameState.first_finisher} completed their recipe!`}
+          <div className="borsht-finisher-subtitle">Final round in progress</div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Game;

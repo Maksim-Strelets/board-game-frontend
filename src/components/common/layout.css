@@ -7,7 +7,7 @@
 .app-header {
   background-color: var(--primary-color);
   color: var(--white);
-  padding: 1rem;
+  padding: 0.3rem;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
@@ -15,7 +15,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 1rem;
 }
@@ -29,9 +29,9 @@
 
 .app-main {
   flex-grow: 1;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 2rem 1rem;
+  padding: 0.5rem;
 }
 
 .app-footer {

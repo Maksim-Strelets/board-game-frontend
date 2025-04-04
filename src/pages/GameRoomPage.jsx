@@ -251,82 +251,85 @@ const RoomPage: React.FC = () => {
 
   return (
       <div className="container">
-        <button
-          className="btn btn-secondary back-btn mb-4"
-          onClick={() => navigate(`/games/${gameId}`)}
-        >
-          <ArrowLeft className="w-5 h-5" /> Back to Rooms
-        </button>
-
-        <div className="room-page grid grid-cols-3 gap-4">
+        <div className={`room-page grid gap-4 ${roomStatus === 'in_progress' ? 'grid-cols-2' : 'grid-cols-3'}`}>
           {/* Players List */}
-          <div className="players-section col-span-1 bg-white border rounded-lg shadow-md p-4">
-            <h2 className="page-heading mb-4">
-              Players ({roomUsers.length}/{RoomMaxPlayers})
-            </h2>
-            <div className="space-y-3">
-              {roomUsers.map((player) => (
-              <div
-                key={player.user_id}
-                className={`player-card flex items-center p-3 rounded-lg border ${
-                  player.status === 'ready'
-                    ? 'bg-green-50 border-green-200'
-                    : player.status === 'in_game'
-                    ? 'bg-blue-50 border-blue-200'
-                    : 'bg-gray-50 border-gray-200'
-                }`}
-              >
-                <div className="player-name-container flex-grow">
-                  <div className="player-username">{player.user_data.username}</div>
-                  {roomStatus === 'waiting' && (
-                    <div className={`player-status player-status-${player.status}`}>
-                      {player.status ? player.status.replace('_', ' ') : 'Waiting'}
+          {roomStatus !== 'in_progress' && (
+              <div className="players-section col-span-1 bg-white border rounded-lg shadow-md p-4">
+                <h2 className="page-heading mb-4">
+                  Players ({roomUsers.length}/{RoomMaxPlayers})
+                </h2>
+                <div className="space-y-3">
+                  {roomUsers.map((player) => (
+                  <div
+                    key={player.user_id}
+                    className={`player-card flex items-center p-3 rounded-lg border ${
+                      player.status === 'ready'
+                        ? 'bg-green-50 border-green-200'
+                        : player.status === 'in_game'
+                        ? 'bg-blue-50 border-blue-200'
+                        : 'bg-gray-50 border-gray-200'
+                    }`}
+                  >
+                    <div className="player-name-container flex-grow">
+                      <div className="player-username">{player.user_data.username}</div>
+                      {roomStatus === 'waiting' && (
+                        <div className={`player-status player-status-${player.status}`}>
+                          {player.status ? player.status.replace('_', ' ') : 'Waiting'}
+                        </div>
+                      )}
+                      <div className="player-badges">
+                        {roomStatus === 'waiting' && player.user_id === roomUsers[0]?.user_id && (
+                          <span className="player-host-badge">Host</span>
+                        )}
+                        {user?.id === player.user_id && (
+                          <span className="player-current-user-badge">You</span>
+                        )}
+                      </div>
                     </div>
-                  )}
-                  <div className="player-badges">
-                    {roomStatus === 'waiting' && player.user_id === roomUsers[0]?.user_id && (
-                      <span className="player-host-badge">Host</span>
-                    )}
-                    {user?.id === player.user_id && (
-                      <span className="player-current-user-badge">You</span>
+                    {user?.id === player.user_id && roomStatus === 'waiting' && (
+                      <div className="ml-auto">
+                        {player.status === 'not_ready' ? (
+                          <button
+                            onClick={() => changePlayerStatus('ready')}
+                            className="btn btn-success btn-sm"
+                          >
+                            Ready
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => changePlayerStatus('not_ready')}
+                            className="btn btn-secondary btn-sm"
+                          >
+                            Not Ready
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
+                ))}
                 </div>
-                {user?.id === player.user_id && roomStatus === 'waiting' && (
-                  <div className="ml-auto">
-                    {player.status === 'not_ready' ? (
-                      <button
-                        onClick={() => changePlayerStatus('ready')}
-                        className="btn btn-success btn-sm"
-                      >
-                        Ready
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => changePlayerStatus('not_ready')}
-                        className="btn btn-secondary btn-sm"
-                      >
-                        Not Ready
-                      </button>
-                    )}
-                  </div>
-                )}
               </div>
-            ))}
-            </div>
-          </div>
+          )}
 
           {/* Game and Chat Section */}
-          <div className="game-chat-section col-span-2">
+          <div className={`game-chat-section ${roomStatus === 'in_progress' ? 'col-span-2' : 'col-span-3'}`}>
             <div className="room-info bg-white border rounded-lg shadow-md p-4 mb-4">
-              <div className="flex justify-between items-center mb-3">
-                <h1 className="page-heading mb-0">Game Room {roomName}</h1>
-                <div className="flex items-center">
-                  <span className={`room-status room-status-${roomStatus}`}>
-                    {roomStatus.replace('_', ' ')}
-                  </span>
-                </div>
-              </div>
+              {roomStatus !== 'in_progress' && (
+                  <div className="flex justify-between items-center mb-3">
+                    <button
+                      className="btn btn-secondary back-btn mb-4"
+                      onClick={() => navigate(`/games/${gameId}`)}
+                    >
+                      <ArrowLeft className="w-5 h-5" /> Back
+                    </button>
+                    <h1 className="page-heading mb-0">Game Room {roomName}</h1>
+                    <div className="flex items-center">
+                      <span className={`room-status room-status-${roomStatus}`}>
+                        {roomStatus.replace('_', ' ')}
+                      </span>
+                    </div>
+                  </div>
+              )}
 
               {roomStatus === 'waiting' ? (
                 <button

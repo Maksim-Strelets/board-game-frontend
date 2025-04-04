@@ -9,9 +9,8 @@
 }
 
 .container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 1rem;
   background-color: var(--background-color);
 }
 
@@ -61,7 +60,7 @@
 
 /* Back Button */
 .back-btn {
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -78,8 +77,15 @@
 /* Room and Players Section */
 .room-page {
   display: grid;
-  grid-template-columns: 1fr 2fr 1fr;
   gap: 1rem;
+}
+
+.grid-cols-3 {
+  grid-template-columns: 1fr 2fr 1fr;
+}
+
+.grid-cols-2 {
+  grid-template-columns: 5fr 1fr;
 }
 
 .players-section,
@@ -87,7 +93,7 @@
   background-color: var(--card-background);
   border-radius: 0.75rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  padding: 1rem;
+  padding: 0.5rem;
 }
 
 .players-section .player-card {
@@ -408,3 +414,4 @@
   font-size: 0.875rem;
   color: #6b7280;
 }
+
