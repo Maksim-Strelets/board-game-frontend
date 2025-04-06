@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { CircleUser, Settings, Info, Heart, Search, RefreshCw } from 'lucide-react';
+
+import DecisionPopup from './DecisionPopup';
+import PlayerDecision from './PlayerDecision';
+import RecipeSelection from './RecipeSelection';
+import DiscardSelection from './DiscardSelection';
+
 import api from '../../utils/api';
 import './Game.css';
 
@@ -14,6 +20,13 @@ const Game = ({ roomId, user }) => {
   const [showRecipePopup, setShowRecipePopup] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Recipe decision
+  const [pendingRequest, setPendingRequest] = useState(null);
+  const [recipeOptions, setRecipeOptions] = useState([]);
+  const [timeRemaining, setTimeRemaining] = useState(0);
+  const [timerInterval, setTimerInterval] = useState(null);
+  const [discardData, setDiscardData] = useState(null);
 
   // References for card containers
   const handContainerRef = useRef(null);
@@ -43,13 +56,49 @@ const Game = ({ roomId, user }) => {
         if (data.type === 'game_state' || data.type === 'game_update') {
           setGameState(data.state);
           setLoading(false);
+
         } else if (data.type === 'game_error') {
           setError(data.message);
+
+        } else if (data.type === 'recipe_selection') {
+          // Store the recipe options and request ID
+          setRecipeOptions(data.recipe_options);
+          setPendingRequest({
+            type: data.type,
+            request_id: data.request_id
+          });
+
+          // Start timer
+          const timeout = data.timeout || 30; // Default
+          setTimeRemaining(timeout);
+
+          // Set up interval to update the timer
+          const interval = setInterval(() => {
+            setTimeRemaining(prev => {
+              if (prev <= 1) {
+                clearInterval(interval);
+                return 0;
+              }
+              return prev - 1;
+            });
+          }, 1000);
+          setTimerInterval(interval);
+
+        } else if (data.type === 'discard_selection') {
+          // Store the discard request data
+          setDiscardData({
+            hand: data.hand,
+            discard_count: data.discard_count,
+            request_id: data.request_id,
+            timeout: data.timeout || 30
+          });
+
         } else if (data.type === 'special_effect') {
           // Handle special effects like "Defense Request"
           if (data.effect === 'defense_request') {
             handleDefenseRequest(data);
           }
+
         } else if (data.type === 'recipe_completed') {
           // Someone completed their recipe
           const message = data.player_id === user.id
@@ -83,45 +132,76 @@ const Game = ({ roomId, user }) => {
     };
   }, [roomId, user.id]);
 
-  // Handle defense request from another player
-  const handleDefenseRequest = (data) => {
-    if (!data.request_id) return;
+  const handleDiscardSelection = (selectedCardIds) => {
+      if (!discardData || !discardData.request_id) return;
 
-    // Check if player has Sour Cream in hand
-    const hasSourCream = gameState.your_hand && gameState.your_hand.some(card =>
-      card.id === 'sour_cream' && card.type === 'special' && card.effect === 'defense'
-    );
-
-    if (!hasSourCream) {
-      // No defense card, automatically decline
+      // Send the selection to the server
       api.getWs().send(JSON.stringify({
-        type: 'defense_response',
-        request_id: data.request_id,
-        use_defense: false
+        type: 'request_response',
+        request_id: discardData.request_id,
+        selected_cards: selectedCardIds
       }));
-      return;
-    }
 
-    // Ask player if they want to use Sour Cream
-    const useDefense = window.confirm(
-      `Player ${data.attacker} is targeting you with ${data.card?.name || 'a special card'}. ` +
-      'Do you want to use Sour Cream to defend?'
-    );
+      // Clear the discard data
+      setDiscardData(null);
+    };
 
-    if (useDefense) {
+  // recipe selection
+  const handleRecipeSelection = (selectedRecipeId) => {
+      if (!pendingRequest || pendingRequest.type !== 'recipe_selection') return;
+
+      // Clear timer
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        setTimerInterval(null);
+      }
+
+      // Send selection to server
       api.getWs().send(JSON.stringify({
-        type: 'defense_response',
-        request_id: data.request_id,
-        use_defense: true
+        type: 'request_response',
+        request_id: pendingRequest.request_id,
+        selected_recipe: selectedRecipeId
       }));
-    } else {
-      api.getWs().send(JSON.stringify({
-        type: 'defense_response',
-        request_id: data.request_id,
-        use_defense: false
-      }));
-    }
+
+      // Clear the pending request
+      setPendingRequest(null);
+      setRecipeOptions([]);
   };
+
+  // Add this useEffect for cleanup
+  useEffect(() => {
+    return () => {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+      }
+    };
+  }, [timerInterval]);
+
+  // Handle defense request from another player
+    const handleDefenseRequest = (data) => {
+      if (!data.request_id) return;
+
+      // Set up defense request UI
+      setPendingRequest({
+        type: 'defense_request',
+        request_id: data.request_id,
+        attacker: data.attacker,
+        card: data.card
+      });
+    };
+
+    const handleDefenseResponse = (useDefense) => {
+      if (!pendingRequest || pendingRequest.type !== 'defense_request') return;
+
+      api.getWs().send(JSON.stringify({
+        type: 'request_response',
+        request_id: pendingRequest.request_id,
+        use_defense: useDefense
+      }));
+
+      setPendingRequest(null);
+    };
+
 
   // Make a move in the game
   const makeMove = (moveData) => {
@@ -167,6 +247,32 @@ const Game = ({ roomId, user }) => {
     });
   };
 
+  // Add this function to handle special card effect choices
+    const handleBlackPepperEffect = (effectChoice) => {
+      if (!selectedCard || selectedCard.id !== 'black_pepper') return;
+
+      makeMove({
+        action: 'play_special',
+        card_id: selectedCard.id,
+        effect_choice: effectChoice
+      });
+
+      setPendingRequest(null);
+    };
+
+    // Add this function to handle olive oil (look_top_5) selection
+    const handleOliveOilSelection = (selectedCardIds) => {
+      if (!selectedCard || selectedCard.id !== 'olive_oil') return;
+
+      makeMove({
+        action: 'play_special',
+        card_id: selectedCard.id,
+        selected_cards: selectedCardIds
+      });
+
+      setPendingRequest(null);
+    };
+
   // Handle playing a special card
   const handlePlaySpecial = () => {
     if (!isCurrentPlayerTurn || !selectedCard || !selectedCard.effect) {
@@ -174,102 +280,37 @@ const Game = ({ roomId, user }) => {
       return;
     }
 
-    let moveData = {
-      action: 'play_special',
-      card_id: selectedCard.id
+      // For Black Pepper, show decision popup instead of window.confirm
+      if (selectedCard.effect === 'discard_or_take') {
+        setPendingRequest({
+          type: 'black_pepper_decision'
+        });
+        return;
+      }
+
+      // For Olive Oil, show card selection popup
+      if (selectedCard.effect === 'look_top_5') {
+        // In a real implementation, you would fetch top 5 cards from server
+        setPendingRequest({
+          type: 'olive_oil_decision',
+          // cards would come from server in real implementation
+          cards: []
+        });
+        return;
+      }
+
+      // Rest of your handlePlaySpecial function
+      let moveData = {
+        action: 'play_special',
+        card_id: selectedCard.id
+      };
+
+      // Handle other card effects...
+
+      makeMove(moveData);
     };
 
-    // Add additional data based on the card effect
-    switch (selectedCard.effect) {
-      case 'steal_or_discard':
-        if (!targetPlayer || !targetCard) {
-          alert('Please select a player and a card from their borsht');
-          return;
-        }
-
-        // Ask user whether to steal or discard
-        const actionChoice = window.confirm(
-          `Do you want to steal ${targetCard} from Player ${targetPlayer}?\n` +
-          'Click OK to steal, or Cancel to discard'
-        );
-
-        moveData = {
-          ...moveData,
-          target_player: targetPlayer,
-          target_card: targetCard,
-          action_type: actionChoice ? 'steal' : 'discard'
-        };
-        break;
-
-      case 'discard_or_take':
-        // Ask user whether to discard or take
-        const effectChoice = window.confirm(
-          'Choose an effect for Black Pepper:\n' +
-          'Click OK to discard 1 ingredient from each opponent\'s borsht\n' +
-          'Click Cancel to take 1 card from each opponent\'s hand'
-        );
-
-        moveData = {
-          ...moveData,
-          effect_choice: effectChoice ? 'discard_from_borsht' : 'take_from_hand'
-        };
-        break;
-
-      case 'take_market':
-        if (!market || market.length === 0) {
-          alert('No cards in the market to take');
-          return;
-        }
-
-        // In a full implementation, you would have UI to select cards from market
-        alert('Select 2 cards from the market to take. (UI for this selection would be implemented in a full version)');
-
-        // For demo purposes, just take the first 2 cards if available
-        const marketCardsToTake = market.slice(0, 2).map(card => card.id);
-        if (marketCardsToTake.length < 2) {
-          alert('Not enough cards in the market');
-          return;
-        }
-
-        moveData = {
-          ...moveData,
-          market_cards: marketCardsToTake
-        };
-        break;
-
-      case 'take_discard':
-        if (!discardTop) {
-          alert('No cards in the discard pile');
-          return;
-        }
-
-        // For demo purposes, just take the top card
-        moveData = {
-          ...moveData,
-          discard_card: discardTop.id
-        };
-        break;
-
-      case 'look_top_5':
-        // This would need a special UI in a full implementation
-        alert('This card allows you to look at the top 5 cards of the deck and take 2. (UI for this selection would be implemented in a full version)');
-        break;
-
-      case 'refresh_market':
-        // No additional data needed
-        break;
-
-      case 'defense':
-        alert('Sour Cream is used defensively when targeted by another player. Hold onto it until needed.');
-        return; // Don't play this card proactively
-
-      default:
-        // No special handling needed
-        break;
-    }
-
-    makeMove(moveData);
-  };
+    // TODO: special card effects
 
   // Handle drawing cards
   const handleDrawCards = () => {
@@ -340,7 +381,7 @@ const Game = ({ roomId, user }) => {
     };
 
   // Render loading state
-  if (loading) {
+  if (loading && !pendingRequest) {
     return (
       <div className="borsht-loading">
         <div className="borsht-loading-spinner"></div>
@@ -372,8 +413,21 @@ const Game = ({ roomId, user }) => {
     );
   }
 
+  // Handle pending requests (like recipe selection) even without a game state
+    if (pendingRequest && pendingRequest.type === 'recipe_selection') {
+      return (
+        <div className="borsht-game-container">
+          <RecipeSelection
+            recipeOptions={recipeOptions}
+            onSelectRecipe={handleRecipeSelection}
+            timeRemaining={timeRemaining}
+          />
+        </div>
+      );
+    }
+
   // Render when no game state is available
-  if (!gameState) {
+  if (!gameState && !pendingRequest) {
     return (
       <div className="borsht-loading">
         <p>Waiting for game to start...</p>
@@ -716,6 +770,112 @@ const Game = ({ roomId, user }) => {
               </div>
             </div>
           </div>
+        )}
+
+      {/* Decision popups */}
+        {pendingRequest?.type === 'recipe_selection' && (
+          <RecipeSelection
+            recipeOptions={recipeOptions}
+            onSelectRecipe={handleRecipeSelection}
+            timeRemaining={timeRemaining}
+          />
+        )}
+
+        {pendingRequest?.type === 'defense_request' && (
+          <DecisionPopup
+            title="Defense Request"
+            message={`Player ${pendingRequest.attacker} is targeting you with ${pendingRequest.card?.name || 'a special card'}. Do you want to use Sour Cream to defend?`}
+            showClose={false}
+          >
+            <div className="borsht-defense-actions">
+              <button
+                className="borsht-button borsht-button-confirm"
+                onClick={() => handleDefenseResponse(true)}
+              >
+                Yes, use Sour Cream
+              </button>
+              <button
+                className="borsht-button borsht-button-cancel"
+                onClick={() => handleDefenseResponse(false)}
+              >
+                No, don't defend
+              </button>
+            </div>
+          </DecisionPopup>
+        )}
+
+        {pendingRequest?.type === 'black_pepper_decision' && (
+          <PlayerDecision
+            title="Black Pepper Effect"
+            message="Choose which effect to apply:"
+            options={[
+              {
+                id: 'discard_from_borsht',
+                label: "Discard 1 ingredient from each opponent's borsht",
+                description: "Forces each opponent to discard one ingredient card from their borsht."
+              },
+              {
+                id: 'take_from_hand',
+                label: "Take 1 card from each opponent's hand",
+                description: "You get to take one random card from each opponent's hand."
+              }
+            ]}
+            onSelect={handleBlackPepperEffect}
+            onCancel={() => setPendingRequest(null)}
+            showCancel={true}
+            cancelLabel="Cancel"
+          />
+        )}
+
+        {pendingRequest?.type === 'olive_oil_decision' && pendingRequest.cards && (
+          <DecisionPopup
+            title="Olive Oil Effect"
+            message="Look at the top 5 cards of the deck and choose 2 to keep:"
+            onClose={() => setPendingRequest(null)}
+          >
+            <div className="borsht-olive-oil-cards">
+              {pendingRequest.cards.map((card) => (
+                <div
+                  key={card.id}
+                  className="borsht-card"
+                  style={{backgroundImage: `url('/games/borscht/cards/${card.id}.png')`}}
+                >
+                  {/* Card content */}
+                </div>
+              ))}
+            </div>
+            <div className="borsht-decision-actions">
+              <button
+                className="borsht-button borsht-button-confirm"
+                onClick={() => {
+                  // In a real implementation, you would have UI to select 2 cards
+                  // For now we'll just show a placeholder
+                  alert("In a full implementation, this would have UI to select 2 cards");
+                  setPendingRequest(null);
+                }}
+              >
+                Confirm Selection
+              </button>
+            </div>
+          </DecisionPopup>
+        )}
+
+      {discardData && (
+          <DiscardSelection
+            hand={discardData.hand}
+            discardCount={discardData.discard_count}
+            timeRemaining={discardData.timeout}
+            onSubmit={handleDiscardSelection}
+            onCancel={() => {
+              // Send an empty selection to the server to trigger random selection
+              api.getWs().send(JSON.stringify({
+                type: 'request_response',
+                request_id: discardData.request_id,
+                selected_cards: []
+              }));
+              setDiscardData(null);
+            }}
+          />
         )}
 
       {/* Game over popup */}
