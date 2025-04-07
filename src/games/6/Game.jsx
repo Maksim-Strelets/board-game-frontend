@@ -90,7 +90,8 @@ const Game = ({ roomId, user }) => {
             hand: data.hand,
             discard_count: data.discard_count,
             request_id: data.request_id,
-            timeout: data.timeout || 30
+            timeout: data.timeout || 30,
+            recipe: data.your_recipe,
           });
 
         } else if (data.type === 'special_effect') {
@@ -139,7 +140,7 @@ const Game = ({ roomId, user }) => {
       api.getWs().send(JSON.stringify({
         type: 'request_response',
         request_id: discardData.request_id,
-        selected_cards: selectedCardIds
+        selected_cards: selectedCardIds,
       }));
 
       // Clear the discard data
@@ -221,7 +222,7 @@ const Game = ({ roomId, user }) => {
 
   // Handle card selection from hand
   const handleCardSelect = (card) => {
-    if (selectedCard && selectedCard.id === card.id) {
+    if (selectedCard && selectedCard.uid === card.uid) {
       setSelectedCard(null); // Deselect if already selected
     } else {
       setSelectedCard(card);
@@ -243,17 +244,17 @@ const Game = ({ roomId, user }) => {
 
     makeMove({
       action: 'add_ingredient',
-      card_id: selectedCard.id
+      card_id: selectedCard.uid
     });
   };
 
   // Add this function to handle special card effect choices
     const handleBlackPepperEffect = (effectChoice) => {
-      if (!selectedCard || selectedCard.id !== 'black_pepper') return;
+      if (!selectedCard || selectedCard.uid !== 'black_pepper') return;
 
       makeMove({
         action: 'play_special',
-        card_id: selectedCard.id,
+        card_id: selectedCard.uid,
         effect_choice: effectChoice
       });
 
@@ -262,11 +263,11 @@ const Game = ({ roomId, user }) => {
 
     // Add this function to handle olive oil (look_top_5) selection
     const handleOliveOilSelection = (selectedCardIds) => {
-      if (!selectedCard || selectedCard.id !== 'olive_oil') return;
+      if (!selectedCard || selectedCard.uid !== 'olive_oil') return;
 
       makeMove({
         action: 'play_special',
-        card_id: selectedCard.id,
+        card_id: selectedCard.uid,
         selected_cards: selectedCardIds
       });
 
@@ -302,7 +303,7 @@ const Game = ({ roomId, user }) => {
       // Rest of your handlePlaySpecial function
       let moveData = {
         action: 'play_special',
-        card_id: selectedCard.id
+        card_id: selectedCard.uid
       };
 
       // Handle other card effects...
@@ -490,16 +491,17 @@ const Game = ({ roomId, user }) => {
               <div className="borsht-borsht-container">
                 {playerData.borsht && playerData.borsht.map((card) => (
                   <div
-                    key={card.id}
-                    className={`borsht-card ${targetCard === card.id ? 'target-selected' : ''}`}
+                    key={card.uid}
+                    className={`borsht-card ${targetCard === card.uid ? 'target-selected' : ''}`}
                     style={{backgroundImage: `url('/games/borscht/cards/${card.id}.png')`}}
-                    onClick={() => handleSelectTargetCard(parseInt(playerId), card.id)}
-                    onMouseEnter={() => setIsZoomed(card.id)}
+                    onClick={() => handleSelectTargetCard(parseInt(playerId), card.uid)}
+                    onMouseEnter={() => setIsZoomed(card.uid)}
                     onMouseLeave={() => setIsZoomed(null)}
                   >
-                    {isZoomed === card.id && (
+                    {isZoomed === card.uid && (
                       <div className="borsht-card-tooltip">
                         <strong>{card.name || card.id}</strong>
+                        {card.type === 'special' && <p>{card.effect_description || card.effect}</p>}
                       </div>
                     )}
                   </div>
@@ -534,13 +536,13 @@ const Game = ({ roomId, user }) => {
             <div className="borsht-market-cards">
               {market.map((card) => (
                 <div
-                  key={card.id}
-                  className={`borsht-card ${card.type === 'special' ? 'borsht-special-effect' : ''}`}
+                  key={card.uid}
+                  className={`borsht-card`}
                   style={{backgroundImage: `url('/games/borscht/cards/${card.id}.png')`}}
-                  onMouseEnter={() => setIsZoomed(card.id)}
+                  onMouseEnter={() => setIsZoomed(card.uid)}
                   onMouseLeave={() => setIsZoomed(null)}
                 >
-                  {isZoomed === card.id && (
+                  {isZoomed === card.uid && (
                     <div className="borsht-card-tooltip">
                       <strong>{card.name || card.id}</strong>
                       {card.type === 'special' && <p>{card.effect_description || card.effect}</p>}
@@ -612,15 +614,16 @@ const Game = ({ roomId, user }) => {
                   <div className="borsht-pot">
                     {borshtCards.map((card) => (
                       <div
-                        key={card.id}
+                        key={card.uid}
                         className="borsht-card"
                         style={{backgroundImage: `url('/games/borscht/cards/${card.id}.png')`}}
-                        onMouseEnter={() => setIsZoomed(card.id)}
+                        onMouseEnter={() => setIsZoomed(card.uid)}
                         onMouseLeave={() => setIsZoomed(null)}
                       >
-                        {isZoomed === card.id && (
+                        {isZoomed === card.uid && (
                           <div className="borsht-card-tooltip">
                             <strong>{card.name || card.id}</strong>
+                            {card.type === 'special' && <p>{card.effect_description || card.effect}</p>}
                           </div>
                         )}
                       </div>
@@ -666,18 +669,17 @@ const Game = ({ roomId, user }) => {
                   ) : (
                     handCards.map((card) => (
                       <div
-                        key={card.id}
-                        className={`borsht-card ${selectedCard && selectedCard.id === card.id ? 'selected' : ''}
-                          ${card.type === 'special' ? 'borsht-special-effect' : ''}`}
+                        key={card.uid}
+                        className={`borsht-card ${selectedCard && selectedCard.uid === card.uid ? 'selected' : ''}`}
                         onClick={() => handleCardSelect(card)}
                         style={{backgroundImage: `url('/games/borscht/cards/${card.id}.png')`}}
-                        onMouseEnter={() => setIsZoomed(card.id)}
+                        onMouseEnter={() => setIsZoomed(card.uid)}
                         onMouseLeave={() => setIsZoomed(null)}
                       >
-                        {isZoomed === card.id && (
+                        {isZoomed === card.uid && (
                           <div className="borsht-card-tooltip">
                             <strong>{card.name || card.id}</strong>
-                            {card.type === 'special' && <p>{card.effect_description || card.effect}</p>}
+                            {(card.effect_description || card.effect) && <p>{card.effect_description || card.effect}</p>}
                           </div>
                         )}
                       </div>
@@ -836,7 +838,7 @@ const Game = ({ roomId, user }) => {
             <div className="borsht-olive-oil-cards">
               {pendingRequest.cards.map((card) => (
                 <div
-                  key={card.id}
+                  key={card.uid}
                   className="borsht-card"
                   style={{backgroundImage: `url('/games/borscht/cards/${card.id}.png')`}}
                 >
@@ -865,13 +867,15 @@ const Game = ({ roomId, user }) => {
             hand={discardData.hand}
             discardCount={discardData.discard_count}
             timeRemaining={discardData.timeout}
+            recipe={discardData.recipe}
             onSubmit={handleDiscardSelection}
             onCancel={() => {
               // Send an empty selection to the server to trigger random selection
               api.getWs().send(JSON.stringify({
                 type: 'request_response',
                 request_id: discardData.request_id,
-                selected_cards: []
+                selected_cards: [],
+                random_discard: true,
               }));
               setDiscardData(null);
             }}

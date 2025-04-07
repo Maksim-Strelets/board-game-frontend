@@ -284,13 +284,14 @@
   bottom: 100%;
   left: 50%;
   transform: translateX(-50%);
-  width: 150px;
+  width: 170px;
   background-color: rgba(38, 70, 83, 0.95);
   color: white;
   padding: 10px;
   border-radius: 5px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   font-size: 0.9rem;
+  text-align: center;
   z-index: 100;
   pointer-events: none;
   opacity: 0;
@@ -1317,13 +1318,53 @@
 
 /* Discard Selection Styles */
 
+/* Recipe display in discard popup */
+.borsht-discard-popup {
+  width: 95%;
+  max-width: 900px;
+}
+
+.borsht-discard-recipe-container {
+  padding: 3px;
+  background-color: #fff5e6;
+  border-radius: 8px;
+  border: 1px solid #e9c46a;
+}
+
+.borsht-discard-section-title {
+  font-weight: bold;
+  color: #264653;
+  font-size: 1.1rem;
+}
+
+.borsht-discard-recipe {
+  display: flex;
+  justify-content: center;
+}
+
+.borsht-discard-recipe-card {
+  width: 500px;
+  height: 350px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  flex-shrink: 0;
+  border-radius: 10px;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 768px) {
+  .borsht-discard-recipe {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
 .borsht-discard-selection-cards {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 10px;
-  margin: 20px 0;
-  padding: 15px;
+  gap: 2px;
   background-color: #fdf6e7;
   border-radius: 8px;
   min-height: 150px;
@@ -1331,11 +1372,10 @@
 
 .borsht-discard-selection-cards .borsht-card {
   transition: all 0.3s ease;
-  border: 2px solid transparent;
 }
 
 .borsht-discard-selection-cards .borsht-card:hover {
-  transform: translateY(-10px) scale(1.1);
+  transform: translateY(-10px) scale(1.3);
   box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
 }
 

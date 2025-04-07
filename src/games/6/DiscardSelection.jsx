@@ -4,6 +4,7 @@ const DiscardSelection = ({
   hand,
   discardCount,
   timeRemaining,
+  recipe,
   onSubmit,
   onCancel
 }) => {
@@ -29,12 +30,12 @@ const DiscardSelection = ({
 
   // Handle card selection/deselection
   const toggleCardSelection = (card) => {
-    if (selectedCards.includes(card.id)) {
-      setSelectedCards(prev => prev.filter(id => id !== card.id));
+    if (selectedCards.includes(card.uid)) {
+      setSelectedCards(prev => prev.filter(uid => uid !== card.uid));
     } else {
       // Only allow selecting up to discardCount cards
       if (selectedCards.length < discardCount) {
-        setSelectedCards(prev => [...prev, card.id]);
+        setSelectedCards(prev => [...prev, card.uid]);
       }
     }
   };
@@ -48,7 +49,7 @@ const DiscardSelection = ({
 
   return (
     <div className="borsht-decision-popup-overlay">
-      <div className="borsht-decision-popup">
+      <div className="borsht-decision-popup borsht-discard-popup">
         <div className="borsht-decision-popup-header">
           <div className="borsht-decision-popup-title">Too Many Cards!</div>
           <div className="borsht-decision-popup-message">
@@ -60,11 +61,22 @@ const DiscardSelection = ({
         </div>
 
         <div className="borsht-decision-popup-content">
+          {recipe && (
+            <div className="borsht-discard-recipe-container">
+              <div className="borsht-discard-recipe">
+                <div
+                  className="borsht-discard-recipe-card"
+                  style={{backgroundImage: `url('/games/borscht/recipes/${recipe.id || 'default'}_full.png')`}}
+                >
+                </div>
+              </div>
+            </div>
+          )}
           <div className="borsht-discard-selection-cards">
             {hand.map((card) => (
               <div
-                key={card.id}
-                className={`borsht-card ${selectedCards.includes(card.id) ? 'selected' : ''}`}
+                key={card.uid}
+                className={`borsht-card ${selectedCards.includes(card.uid) ? 'selected' : ''}`}
                 style={{backgroundImage: `url('/games/borscht/cards/${card.id}.png')`}}
                 onClick={() => toggleCardSelection(card)}
               >
