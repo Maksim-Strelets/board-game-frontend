@@ -1413,3 +1413,67 @@
   font-style: italic;
   margin: 10px 0;
 }
+
+/* Market Refresh Button Styles */
+
+.borsht-market-header-horizontal {
+  display: flex;
+  justify-content: flex-end;
+  margin-left: 2rem;
+  margin-bottom: 0.5rem;
+  width: 100%;
+}
+
+.borsht-refresh-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #2a9d8f;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.borsht-refresh-button:hover:not(:disabled) {
+  background-color: #229086;
+  transform: translateY(-2px);
+}
+
+.borsht-refresh-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.borsht-refresh-button:disabled {
+  background-color: #ccc;
+  color: #777;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Animation for refresh icon */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.borsht-refresh-button:hover:not(:disabled) svg {
+  animation: spin 1s linear infinite;
+}
+
+/* Responsive adjustment */
+@media (max-width: 768px) {
+  .borsht-refresh-button span {
+    display: none; /* Hide text on small screens, keep just the icon */
+  }
+
+  .borsht-refresh-button {
+    padding: 6px;
+  }
+
+  .borsht-market-header-horizontal {
+    margin-left: 1.5rem;
+  }
+}

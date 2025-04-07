@@ -313,6 +313,17 @@ const Game = ({ roomId, user }) => {
 
     // TODO: special card effects
 
+  const handleFreeMarketRefresh = () => {
+      if (!api.getWs().socket) return;
+
+      api.getWs().send(JSON.stringify({
+        type: 'game_move',
+        move: {
+          action: 'free_market_refresh'
+        }
+      }));
+    };
+
   // Handle drawing cards
   const handleDrawCards = () => {
     if (!isCurrentPlayerTurn) return;
@@ -554,35 +565,47 @@ const Game = ({ roomId, user }) => {
                 <div className="borsht-empty-market">Market is empty</div>
               )}
             </div>
-
-            <div className="borsht-decks-area">
-              <div className="borsht-deck-container">
-                <div
-                  className="borsht-deck"
-                  style={{backgroundImage: `url('/games/borscht/cards/cover.png')`}}
-                  title="Ingredient Deck"
-                >
-                  <div className="borsht-pile-count">
-                    {gameState.cards_in_deck || 0}
-                  </div>
-                </div>
-                <div className="borsht-deck-label">Draw Pile</div>
-              </div>
-
-              {discardTop && (
-                <div className="borsht-deck-container">
-                  <div
-                    className="borsht-discard"
-                    style={{backgroundImage: `url('/games/borscht/cards/${discardTop.id}.png')`}}
-                    title="Discard Pile"
-                  >
-                    <div className="borsht-pile-count">
-                      {gameState.discard_pile_size || 0}
+            <div>
+                <div className="borsht-decks-area">
+                  <div className="borsht-deck-container">
+                    <div
+                      className="borsht-deck"
+                      style={{backgroundImage: `url('/games/borscht/cards/cover.png')`}}
+                      title="Ingredient Deck"
+                    >
+                      <div className="borsht-pile-count">
+                        {gameState.cards_in_deck || 0}
+                      </div>
                     </div>
+                    <div className="borsht-deck-label">Draw Pile</div>
                   </div>
-                  <div className="borsht-deck-label">Discard Pile</div>
+
+                  {discardTop && (
+                    <div className="borsht-deck-container">
+                      <div
+                        className="borsht-discard"
+                        style={{backgroundImage: `url('/games/borscht/cards/${discardTop.id}.png')`}}
+                        title="Discard Pile"
+                      >
+                        <div className="borsht-pile-count">
+                          {gameState.discard_pile_size || 0}
+                        </div>
+                      </div>
+                      <div className="borsht-deck-label">Discard Pile</div>
+                    </div>
+                  )}
                 </div>
-              )}
+                {gameState?.free_refresh && (
+                    <button
+                        className="borsht-button borsht-refresh-button ${}"
+                        onClick={handleFreeMarketRefresh}
+                        disabled={!gameState?.free_refresh}
+                        title={isCurrentPlayerTurn ? "Refresh the market for free" : "Only the current player can refresh the market"}
+                      >
+                        <RefreshCw size={16} />
+                        <span>Free Market Refresh</span>
+                    </button>
+                )}
             </div>
           </div>
         </div>
