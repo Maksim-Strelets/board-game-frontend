@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import DecisionPopup from './DecisionPopup';
 import './Game.css';
 
@@ -20,11 +20,30 @@ const PlayerDecision = ({
   message,
   options,
   onSelect,
+  onSubmit,
   onCancel,
   showCancel = false,
   cancelLabel = "Cancel",
-  timeRemaining
+  expiresAt
 }) => {
+  const now = Math.floor(Date.now() / 1000);
+  const timeRemaining = expiresAt - now || 30; // Default
+  const [timer, setTimer] = useState(timeRemaining || 30);
+
+  // Timer countdown effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimer(prevTimer => {
+        if (prevTimer <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prevTimer - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [onSubmit]);
+
   return (
     <DecisionPopup
       title={title}

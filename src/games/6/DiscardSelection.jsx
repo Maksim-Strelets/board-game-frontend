@@ -3,11 +3,13 @@ import React, { useState, useEffect } from 'react';
 const DiscardSelection = ({
   hand,
   discardCount,
-  timeRemaining,
+  expiresAt,
   recipe,
   onSubmit,
   onCancel
 }) => {
+  const now = Math.floor(Date.now() / 1000);
+  const timeRemaining = expiresAt - now || 30; // Default
   const [selectedCards, setSelectedCards] = useState([]);
   const [timer, setTimer] = useState(timeRemaining || 30);
 

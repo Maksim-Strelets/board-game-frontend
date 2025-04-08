@@ -73,8 +73,9 @@ const Game = ({ roomId, user }) => {
           });
 
           // Start timer
-          const timeout = data.timeout || 30; // Default
-          setTimeRemaining(timeout);
+          const now = Math.floor(Date.now() / 1000);
+          const timeleft = data.expires_at - now || 30; // Default
+          setTimeRemaining(timeleft);
 
           // Set up interval to update the timer
           const interval = setInterval(() => {
@@ -94,7 +95,7 @@ const Game = ({ roomId, user }) => {
             hand: data.hand,
             discard_count: data.discard_count,
             request_id: data.request_id,
-            timeout: data.timeout || 30,
+            expires_at: data.expires_at,
             recipe: data.your_recipe,
           });
 
@@ -104,7 +105,7 @@ const Game = ({ roomId, user }) => {
             market: data.market,
             discard_count: data.discard_count,
             request_id: data.request_id,
-            timeout: data.timeout || 30,
+            expires_at: data.expires_at,
           });
 
         } else if (data.type === 'special_effect') {
@@ -1063,7 +1064,7 @@ const Game = ({ roomId, user }) => {
           <DiscardSelection
             hand={discardData.hand}
             discardCount={discardData.discard_count}
-            timeRemaining={discardData.timeout}
+            expiresAt={discardData.expires_at}
             recipe={discardData.recipe}
             onSubmit={handleDiscardSelection}
             onCancel={() => {
@@ -1083,7 +1084,7 @@ const Game = ({ roomId, user }) => {
           <MarketDiscardSelection
             market={marketDiscardData.market}
             discardCount={marketDiscardData.discard_count}
-            timeRemaining={marketDiscardData.timeout}
+            expiresAt={marketDiscardData.expires_at}
             onSubmit={handleMarketDiscardSelection}
             onCancel={() => {
               // Send an empty selection to the server to trigger random selection

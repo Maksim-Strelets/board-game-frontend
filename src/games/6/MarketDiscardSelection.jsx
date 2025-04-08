@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle } from 'lucide-react';
 
-const MarketDiscardSelection = ({ market, discardCount, timeRemaining, onSubmit, onCancel }) => {
+const MarketDiscardSelection = ({ market, discardCount, expiresAt, onSubmit, onCancel }) => {
+  const now = Math.floor(Date.now() / 1000);
+  const timeRemaining = expiresAt - now || 30; // Default
+
   const [selectedCards, setSelectedCards] = useState([]);
   const [timer, setTimer] = useState(timeRemaining || 30);
   const [timerInterval, setTimerInterval] = useState(null);
