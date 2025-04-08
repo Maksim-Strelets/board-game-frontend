@@ -829,7 +829,6 @@ const Game = ({ roomId, user }) => {
                             <div className="borsht-card-tooltip">
                               <strong>{card.name || card.id}</strong>
                               {(card.effect_description || card.effect) && <p>{card.effect_description || card.effect}</p>}
-                              <p>Cost: {card.cost || 1}</p>
                             </div>
                           )}
                         </div>
@@ -849,7 +848,7 @@ const Game = ({ roomId, user }) => {
                     className="borsht-action-button"
                     onClick={handleAddIngredient}
                     disabled={!isCurrentPlayerTurn || !selectedCard || selectedCard.type === 'special' || selectedMarketCards.length > 0 || selectedHandCards.length !== 1 || !canAddCardToBorsht(selectedCard)}
-                    title={
+                    data-tooltip={
                       !isCurrentPlayerTurn
                         ? "Not your turn"
                         : selectedMarketCards.length > 0
@@ -874,7 +873,7 @@ const Game = ({ roomId, user }) => {
                     className="borsht-action-button"
                     onClick={handleDrawCards}
                     disabled={!isCurrentPlayerTurn || selectedMarketCards.length > 0}
-                    title={
+                    data-tooltip={
                       !isCurrentPlayerTurn
                         ? "Not your turn"
                         : selectedMarketCards.length > 0
@@ -888,7 +887,7 @@ const Game = ({ roomId, user }) => {
                     className="borsht-action-button"
                     onClick={handlePlaySpecial}
                     disabled={!isCurrentPlayerTurn || !selectedCard || selectedCard.type !== 'special' || selectedMarketCards.length > 0 || selectedHandCards.length !== 1}
-                    title={
+                    data-tooltip={
                       !isCurrentPlayerTurn
                         ? "Not your turn"
                         : selectedMarketCards.length > 0
@@ -909,13 +908,13 @@ const Game = ({ roomId, user }) => {
                     onClick={handleExchange}
                     disabled={
                       !isCurrentPlayerTurn ||
-                      (selectedMarketCards.length === 0 && selectedHandCards.length === 0) ||
+                      (selectedMarketCards.length === 0 || selectedHandCards.length === 0) ||
                       (selectedMarketCards.length > 0 && !isExchangeValid())
                     }
-                    title={
+                    data-tooltip={
                       !isCurrentPlayerTurn
                         ? "Not your turn"
-                        : selectedMarketCards.length === 0 && selectedHandCards.length === 0
+                        : selectedMarketCards.length === 0 || selectedHandCards.length === 0
                           ? "Select cards to exchange"
                         : selectedMarketCards.length > 0 && selectedHandCards.length === 0
                           ? "Select cards from your hand to exchange"

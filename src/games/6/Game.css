@@ -1572,3 +1572,76 @@
   font-weight: bold;
   color: #d91b1b;
 }
+
+/* Enhance the action button tooltips */
+.borsht-action-button {
+  position: relative;
+}
+
+/* Create a custom tooltip for action buttons */
+.borsht-action-button::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 120%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 220px;
+  background-color: rgba(38, 70, 83, 0.95);
+  color: white;
+  padding: 12px;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  font-size: 1.05rem;
+  text-align: center;
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.1s ease-in; /* Fast appearance */
+  pointer-events: none;
+  white-space: normal;
+  font-weight: normal;
+  line-height: 1.4;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Show tooltip immediately on hover */
+.borsht-action-button:hover::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(-5px);
+}
+
+/* Add a small arrow to the tooltip */
+.borsht-action-button::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 8px;
+  border-style: solid;
+  border-color: transparent transparent rgba(38, 70, 83, 0.95) transparent;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.1s ease-in;
+  z-index: 101;
+}
+
+.borsht-action-button:hover::before {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Make sure the tooltip goes above the button */
+.borsht-action-button:hover {
+  z-index: 10;
+}
+
+/* For mobile screens, adjust tooltip width and position */
+@media (max-width: 768px) {
+  .borsht-action-button:hover::after {
+    width: 150px;
+    font-size: 0.9rem;
+    bottom: 110%;
+  }
+}
