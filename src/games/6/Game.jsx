@@ -6,6 +6,7 @@ import PlayerDecision from './PlayerDecision';
 import RecipeSelection from './RecipeSelection';
 import DiscardSelection from './DiscardSelection';
 import OliveOilSelection from './OliveOilSelection';
+import CinnamonSelection from './CinnamonSelection';
 import MarketDiscardSelection from './MarketDiscardSelection';
 
 import api from '../../utils/api';
@@ -24,6 +25,7 @@ const Game = ({ roomId, user }) => {
   const [error, setError] = useState(null);
   const [selectedMarketCards, setSelectedMarketCards] = useState([]);
   const [selectedHandCards, setSelectedHandCards] = useState([]);
+  const [cinnamonData, setCinnamonData] = useState(null);
 
   //  decision
   const [pendingRequest, setPendingRequest] = useState(null);
@@ -120,6 +122,15 @@ const Game = ({ roomId, user }) => {
           // Store the olive oil selection data
           setOliveOilData({
             cards: data.cards,
+            select_count: data.select_count,
+            request_id: data.request_id,
+            expires_at: data.expires_at,
+          });
+
+        } else if (data.type === 'cinnamon_selection') {
+          // Store the cinnamon selection data
+          setCinnamonData({
+            discard_pile: data.discard_pile,
             select_count: data.select_count,
             request_id: data.request_id,
             expires_at: data.expires_at,
@@ -242,6 +253,20 @@ const Game = ({ roomId, user }) => {
       // Clear the olive oil data
       setOliveOilData(null);
     };
+
+    const handleCinnamonSelection = (selectedCardIds) => {
+        if (!cinnamonData || !cinnamonData.request_id) return;
+
+        // Send the selection to the server
+        api.getWs().send(JSON.stringify({
+          type: 'request_response',
+          request_id: cinnamonData.request_id,
+          selected_cards: selectedCardIds,
+        }));
+
+        // Clear the cinnamon data
+        setCinnamonData(null);
+      };
 
   // Add this useEffect for cleanup
   useEffect(() => {
@@ -888,7 +913,14 @@ const Game = ({ roomId, user }) => {
                   <button
                     className="borsht-action-button"
                     onClick={handlePlaySpecial}
-                    disabled={!isCurrentPlayerTurn || !selectedCard || selectedCard.type !== 'special' || selectedMarketCards.length > 0 || selectedHandCards.length !== 1}
+                    disabled={
+                        !isCurrentPlayerTurn ||
+                        !selectedCard ||
+                        selectedCard.type !== 'special' ||
+                        selectedMarketCards.length > 0 ||
+                        selectedHandCards.length !== 1 ||
+                        (selectedCard && selectedCard.id === 'cinnamon' && (!gameState.discard_pile_size || gameState.discard_pile_size === 0))
+                    }
                     data-tooltip={
                       !isCurrentPlayerTurn
                         ? "Not your turn"
@@ -898,9 +930,11 @@ const Game = ({ roomId, user }) => {
                           ? "Select exactly one special card"
                         : !selectedCard
                           ? "Select a special card first"
-                          : selectedCard.type !== 'special'
-                            ? "Selected card is not a special card"
-                            : "Play the selected special card"
+                        : selectedCard.type !== 'special'
+                          ? "Selected card is not a special card"
+                        : (selectedCard.id === 'cinnamon' && (!gameState.discard_pile_size || gameState.discard_pile_size === 0))
+                          ? "Cannot play Cinnamon when the discard pile is empty"
+                          : "Play the selected special card"
                     }
                   >
                     Play Special
@@ -1060,6 +1094,25 @@ const Game = ({ roomId, user }) => {
             </div>
           </DecisionPopup>
         )}
+
+      {cinnamonData && (
+        <CinnamonSelection
+          discard_pile={cinnamonData.discard_pile}
+          selectCount={cinnamonData.select_count}
+          expiresAt={cinnamonData.expires_at}
+          onSubmit={handleCinnamonSelection}
+          onCancel={() => {
+            // Send an empty selection to the server to trigger random selection
+            api.getWs().send(JSON.stringify({
+              type: 'request_response',
+              request_id: cinnamonData.request_id,
+              selected_cards: [],
+              random_selection: true,
+            }));
+            setCinnamonData(null);
+          }}
+        />
+      )}
 
       {discardData && (
           <DiscardSelection

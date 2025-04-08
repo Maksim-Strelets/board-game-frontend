@@ -74,7 +74,12 @@ const OliveOilSelection = ({ cards, selectCount, onSubmit, onCancel, expiresAt }
                 className={`borsht-card ${selectedCards.find(c => c.uid === card.uid) ? 'selected' : ''}`}
                 style={{backgroundImage: `url('/games/borscht/cards/${card.id}.png')`}}
                 onClick={() => toggleCardSelection(card)}
-              />
+              >
+                <div className="borsht-card-tooltip">
+                  <strong>{card.name || card.id}</strong>
+                  {card.type === 'special' && <p>{card.effect_description || card.effect}</p>}
+                </div>
+              </div>
             ))}
           </div>
 

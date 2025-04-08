@@ -75,7 +75,6 @@ const MarketDiscardSelection = ({ market, discardCount, expiresAt, onSubmit, onC
               <div className="borsht-card-tooltip">
                 <strong>{card.name || card.id}</strong>
                 {card.type === 'special' && <p>{card.effect_description || card.effect}</p>}
-                <p>Cost: {card.cost || 1}</p>
               </div>
             </div>
           ))}
