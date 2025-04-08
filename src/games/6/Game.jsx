@@ -3,6 +3,7 @@ import { CircleUser, Settings, Info, Heart, Search, RefreshCw } from 'lucide-rea
 
 import DecisionPopup from './DecisionPopup';
 import PlayerDecision from './PlayerDecision';
+import GingerSelection from './GingerSelection';
 import RecipeSelection from './RecipeSelection';
 import DiscardSelection from './DiscardSelection';
 import OliveOilSelection from './OliveOilSelection';
@@ -35,6 +36,7 @@ const Game = ({ roomId, user }) => {
   const [discardData, setDiscardData] = useState(null);
   const [marketDiscardData, setMarketDiscardData] = useState(null);
   const [oliveOilData, setOliveOilData] = useState(null);
+  const [gingerData, setGingerData] = useState(null);
 
   // References for card containers
   const handContainerRef = useRef(null);
@@ -131,6 +133,15 @@ const Game = ({ roomId, user }) => {
           // Store the cinnamon selection data
           setCinnamonData({
             discard_pile: data.discard_pile,
+            select_count: data.select_count,
+            request_id: data.request_id,
+            expires_at: data.expires_at,
+          });
+
+        } else if (data.type === 'ginger_selection') {
+          // Store the ginger selection data
+          setGingerData({
+            market: data.market,
             select_count: data.select_count,
             request_id: data.request_id,
             expires_at: data.expires_at,
@@ -267,6 +278,20 @@ const Game = ({ roomId, user }) => {
         // Clear the cinnamon data
         setCinnamonData(null);
       };
+
+  const handleGingerSelection = (selectedCardIds) => {
+      if (!gingerData || !gingerData.request_id) return;
+
+      // Send the selection to the server
+      api.getWs().send(JSON.stringify({
+        type: 'request_response',
+        request_id: gingerData.request_id,
+        selected_cards: selectedCardIds,
+      }));
+
+      // Clear the ginger data
+      setGingerData(null);
+    };
 
   // Add this useEffect for cleanup
   useEffect(() => {
@@ -1168,6 +1193,25 @@ const Game = ({ roomId, user }) => {
                 random_selection: true,
               }));
               setOliveOilData(null);
+            }}
+          />
+        )}
+
+      {gingerData && (
+          <GingerSelection
+            market={gingerData.market}
+            selectCount={gingerData.select_count}
+            expiresAt={gingerData.expires_at}
+            onSubmit={handleGingerSelection}
+            onCancel={() => {
+              // Send an empty selection to the server to trigger random selection
+              api.getWs().send(JSON.stringify({
+                type: 'request_response',
+                request_id: gingerData.request_id,
+                selected_cards: [],
+                random_selection: true,
+              }));
+              setGingerData(null);
             }}
           />
         )}
