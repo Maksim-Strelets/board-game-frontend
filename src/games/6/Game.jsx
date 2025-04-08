@@ -8,6 +8,7 @@ import RecipeSelection from './RecipeSelection';
 import DiscardSelection from './DiscardSelection';
 import OliveOilSelection from './OliveOilSelection';
 import CinnamonSelection from './CinnamonSelection';
+import RedPepperDecision from './RedPepperDecision';
 import MarketDiscardSelection from './MarketDiscardSelection';
 
 import api from '../../utils/api';
@@ -37,6 +38,7 @@ const Game = ({ roomId, user }) => {
   const [marketDiscardData, setMarketDiscardData] = useState(null);
   const [oliveOilData, setOliveOilData] = useState(null);
   const [gingerData, setGingerData] = useState(null);
+  const [redPepperData, setRedPepperData] = useState(null);
 
   // References for card containers
   const handContainerRef = useRef(null);
@@ -251,6 +253,31 @@ const Game = ({ roomId, user }) => {
       setRecipeOptions([]);
   };
 
+  const canPlayRedPepper = () => {
+      // Can only play if a target card is selected from an opponent's borsht
+      if (selectedCard && selectedCard.id === 'red_pepper') {
+        return targetPlayer !== null && targetCard !== null;
+      }
+      return true; // For other cards, this check doesn't apply
+    };
+
+  const handleRedPepperDecision = (action) => {
+      if (!redPepperData) return;
+
+      const moveData = {
+        action: 'play_special',
+        card_id: selectedCard.uid,
+        target_player: redPepperData.targetPlayer,
+        target_cards: [redPepperData.targetCard.uid],
+        action_type: action  // 'steal' or 'discard'
+      };
+
+      makeMove(moveData);
+      setRedPepperData(null);
+      setTargetPlayer(null);
+      setTargetCard(null);
+    };
+
   const handleOliveOilSelection = (selectedCardIds) => {
       if (!oliveOilData || !oliveOilData.request_id) return;
 
@@ -445,6 +472,42 @@ const Game = ({ roomId, user }) => {
         return;
       }
 
+      // For Red Pepper, check if a target card is selected
+      if (selectedCard.id === 'chili_pepper') {
+        if (!targetPlayer || !targetCard) {
+          alert('Please select a card from an opponent\'s borsht first');
+          return;
+        }
+
+        // Find the target card details from the opponent's borsht
+        const opponent = gameState.players[targetPlayer];
+        if (!opponent || !opponent.borsht) {
+          alert('Cannot find the selected card');
+          return;
+        }
+
+        if (targetPlayer === gameState?.first_finisher) {
+          alert('Cannot use pepper on this player');
+          return;
+        }
+
+        const targetCardDetails = opponent.borsht.find(card => card.uid === targetCard);
+        if (!targetCardDetails) {
+          alert('Cannot find the selected card');
+          return;
+        }
+
+        // Set the red pepper data for the popup
+        setRedPepperData({
+          targetPlayer,
+          targetCard: targetCardDetails,
+          playerRecipe: gameState.your_recipe,
+          playerBorsht: gameState.your_borsht
+        });
+
+        return;
+      }
+
       // Rest of your handlePlaySpecial function
       let moveData = {
         action: 'play_special',
@@ -527,9 +590,14 @@ const Game = ({ roomId, user }) => {
     };
 
   // Handle card selection from another player's borsht
-  const handleSelectTargetCard = (playerId, cardId) => {
-    setTargetPlayer(playerId);
-    setTargetCard(cardId);
+  const handleSelectTargetCard = (playerId, cardUid) => {
+    if ( targetCard && targetCard ===  cardUid) {
+        setTargetPlayer(null);
+        setTargetCard(null);
+    } else {
+        setTargetPlayer(playerId);
+        setTargetCard(cardUid);
+    }
   };
 
   const canAddCardToBorsht = (card) => {
@@ -685,7 +753,7 @@ const Game = ({ roomId, user }) => {
                     {isZoomed === card.uid && (
                       <div className="borsht-card-tooltip">
                         <strong>{card.name || card.id}</strong>
-                        {card.type === 'special' && <p>{card.effect_description || card.effect}</p>}
+                        {card.type === 'special' || card.effect_description && <p>{card.effect_description || card.effect}</p>}
                       </div>
                     )}
                   </div>
@@ -730,7 +798,7 @@ const Game = ({ roomId, user }) => {
                   {isZoomed === card.uid && (
                     <div className="borsht-card-tooltip">
                       <strong>{card.name || card.id}</strong>
-                      {card.type === 'special' && <p>{card.effect_description || card.effect}</p>}
+                      {card.type === 'special' || card.effect_description && <p>{card.effect_description || card.effect}</p>}
                     </div>
                   )}
                 </div>
@@ -820,7 +888,7 @@ const Game = ({ roomId, user }) => {
                         {isZoomed === card.uid && (
                           <div className="borsht-card-tooltip">
                             <strong>{card.name || card.id}</strong>
-                            {card.type === 'special' && <p>{card.effect_description || card.effect}</p>}
+                            {card.type === 'special' || card.effect_description && <p>{card.effect_description || card.effect}</p>}
                           </div>
                         )}
                       </div>
@@ -939,12 +1007,14 @@ const Game = ({ roomId, user }) => {
                     className="borsht-action-button"
                     onClick={handlePlaySpecial}
                     disabled={
-                        !isCurrentPlayerTurn ||
-                        !selectedCard ||
-                        selectedCard.type !== 'special' ||
-                        selectedMarketCards.length > 0 ||
-                        selectedHandCards.length !== 1 ||
-                        (selectedCard && selectedCard.id === 'cinnamon' && (!gameState.discard_pile_size || gameState.discard_pile_size === 0))
+                      !isCurrentPlayerTurn ||
+                      !selectedCard ||
+                      selectedCard.type !== 'special' ||
+                      selectedMarketCards.length > 0 ||
+                      selectedHandCards.length !== 1 ||
+                      (selectedCard && selectedCard.id === 'cinnamon' && (!gameState.discard_pile_size || gameState.discard_pile_size === 0)) ||
+                      (selectedCard && selectedCard.id === 'chili_pepper' && (!targetPlayer || !targetCard)) ||
+                      (gameState?.first_finisher && targetPlayer === gameState?.first_finisher)
                     }
                     data-tooltip={
                       !isCurrentPlayerTurn
@@ -957,8 +1027,12 @@ const Game = ({ roomId, user }) => {
                           ? "Select a special card first"
                         : selectedCard.type !== 'special'
                           ? "Selected card is not a special card"
+                        : gameState?.first_finisher && targetPlayer === gameState?.first_finisher
+                          ? "Cannot use special cards against first finisher"
                         : (selectedCard.id === 'cinnamon' && (!gameState.discard_pile_size || gameState.discard_pile_size === 0))
                           ? "Cannot play Cinnamon when the discard pile is empty"
+                        : (selectedCard.id === 'chili_pepper' && (!targetPlayer || !targetCard))
+                          ? "Select a card from an opponent's borsht first"
                           : "Play the selected special card"
                     }
                   >
@@ -1212,6 +1286,21 @@ const Game = ({ roomId, user }) => {
                 random_selection: true,
               }));
               setGingerData(null);
+            }}
+          />
+        )}
+
+      {redPepperData && (
+          <RedPepperDecision
+            targetPlayer={redPepperData.targetPlayer}
+            targetCard={redPepperData.targetCard}
+            playerRecipe={redPepperData.playerRecipe}
+            playerBorsht={redPepperData.playerBorsht}
+            onSelect={handleRedPepperDecision}
+            onCancel={() => {
+              setRedPepperData(null);
+              setTargetPlayer(null);
+              setTargetCard(null);
             }}
           />
         )}

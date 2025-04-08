@@ -1645,3 +1645,121 @@
     bottom: 110%;
   }
 }
+
+/* Add these styles to your Game.css file */
+
+.borsht-target-card-preview {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.borsht-target-card-preview .borsht-card {
+  width: 120px;
+  height: 180px;
+  transform: none;
+  cursor: default;
+  margin: 0 auto;
+}
+
+.borsht-target-card-preview .borsht-card:hover {
+  transform: none;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+.borsht-decision-action {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 10px;
+  background-color: #2a9d8f;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.borsht-decision-action:hover:not(.disabled) {
+  background-color: #228b7f;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.borsht-decision-action.cancel {
+  background-color: #e76f51;
+}
+
+.borsht-decision-action.cancel:hover {
+  background-color: #d65c3e;
+}
+
+.borsht-decision-action.disabled {
+  background-color: #ccc;
+  color: #777;
+  cursor: not-allowed;
+}
+
+/* Tooltip for decision actions */
+.borsht-decision-action {
+  position: relative;
+}
+
+.borsht-decision-action::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 120%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 220px;
+  background-color: rgba(38, 70, 83, 0.95);
+  color: white;
+  padding: 12px;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  font-size: 1.05rem;
+  text-align: center;
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.1s ease-in;
+  pointer-events: none;
+  white-space: normal;
+  font-weight: normal;
+  line-height: 1.4;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Show tooltip on hover */
+.borsht-decision-action:hover::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(-5px);
+}
+
+/* Add a small arrow to the tooltip */
+.borsht-decision-action::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 8px;
+  border-style: solid;
+  border-color: transparent transparent rgba(38, 70, 83, 0.95) transparent;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.1s ease-in;
+  z-index: 101;
+}
+
+.borsht-decision-action:hover::before {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Make sure the tooltip goes above the button */
+.borsht-decision-action:hover {
+  z-index: 10;
+}
