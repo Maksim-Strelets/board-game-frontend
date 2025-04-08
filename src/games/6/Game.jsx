@@ -5,6 +5,7 @@ import DecisionPopup from './DecisionPopup';
 import PlayerDecision from './PlayerDecision';
 import RecipeSelection from './RecipeSelection';
 import DiscardSelection from './DiscardSelection';
+import MarketDiscardSelection from './MarketDiscardSelection';
 
 import api from '../../utils/api';
 import './Game.css';
@@ -20,6 +21,8 @@ const Game = ({ roomId, user }) => {
   const [showRecipePopup, setShowRecipePopup] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedMarketCards, setSelectedMarketCards] = useState([]);
+  const [selectedHandCards, setSelectedHandCards] = useState([]);
 
   // Recipe decision
   const [pendingRequest, setPendingRequest] = useState(null);
@@ -27,6 +30,7 @@ const Game = ({ roomId, user }) => {
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [timerInterval, setTimerInterval] = useState(null);
   const [discardData, setDiscardData] = useState(null);
+  const [marketDiscardData, setMarketDiscardData] = useState(null);
 
   // References for card containers
   const handContainerRef = useRef(null);
@@ -84,7 +88,7 @@ const Game = ({ roomId, user }) => {
           }, 1000);
           setTimerInterval(interval);
 
-        } else if (data.type === 'discard_selection') {
+        } else if (data.type === 'discard_selection' && data.reason === 'hand_limit') {
           // Store the discard request data
           setDiscardData({
             hand: data.hand,
@@ -92,6 +96,15 @@ const Game = ({ roomId, user }) => {
             request_id: data.request_id,
             timeout: data.timeout || 30,
             recipe: data.your_recipe,
+          });
+
+        } else if (data.type === 'discard_selection' && data.reason === 'market_limit') {
+          // Store the market discard request data
+          setMarketDiscardData({
+            market: data.market,
+            discard_count: data.discard_count,
+            request_id: data.request_id,
+            timeout: data.timeout || 30,
           });
 
         } else if (data.type === 'special_effect') {
@@ -133,6 +146,27 @@ const Game = ({ roomId, user }) => {
     };
   }, [roomId, user.id]);
 
+  const calculateCardsCost = (cards) => {
+      return cards.reduce((total, card) => total + (card.cost || 1), 0);
+    };
+
+  const handleMarketCardSelect = (card) => {
+      // Clear the single-selection state if this is the first market card selection
+      if (selectedMarketCards.length === 0 && selectedCard) {
+        setSelectedHandCards([selectedCard])
+        setSelectedCard(null);
+        setSelectedAction(null);
+      }
+
+      // If already selected, remove it from selection
+      if (selectedMarketCards.some(c => c.uid === card.uid)) {
+        setSelectedMarketCards(prev => prev.filter(c => c.uid !== card.uid));
+      } else {
+        // Otherwise add it to selection
+        setSelectedMarketCards(prev => [...prev, card]);
+      }
+    };
+
   const handleDiscardSelection = (selectedCardIds) => {
       if (!discardData || !discardData.request_id) return;
 
@@ -145,6 +179,20 @@ const Game = ({ roomId, user }) => {
 
       // Clear the discard data
       setDiscardData(null);
+    };
+
+  const handleMarketDiscardSelection = (selectedCardIds) => {
+      if (!marketDiscardData || !marketDiscardData.request_id) return;
+
+      // Send the selection to the server
+      api.getWs().send(JSON.stringify({
+        type: 'request_response',
+        request_id: marketDiscardData.request_id,
+        selected_cards: selectedCardIds,
+      }));
+
+      // Clear the discard data
+      setMarketDiscardData(null);
     };
 
   // recipe selection
@@ -218,23 +266,68 @@ const Game = ({ roomId, user }) => {
     setSelectedAction(null);
     setTargetPlayer(null);
     setTargetCard(null);
+    setSelectedMarketCards([]);
+    setSelectedHandCards([]);
   };
 
   // Handle card selection from hand
   const handleCardSelect = (card) => {
-    if (selectedCard && selectedCard.uid === card.uid) {
-      setSelectedCard(null); // Deselect if already selected
-    } else {
-      setSelectedCard(card);
-
-      // Determine available actions based on card type
-      if (card.type === 'special') {
-        setSelectedAction('play_special');
-      } else {
-        setSelectedAction('add_ingredient');
+      // If market cards are selected, use the separate state for hand cards
+      if (selectedMarketCards.length > 0) {
+        if (selectedHandCards.some(c => c.uid === card.uid)) {
+          setSelectedHandCards(prev => prev.filter(c => c.uid !== card.uid));
+        } else {
+          setSelectedHandCards(prev => [...prev, card]);
+        }
+        return;
       }
-    }
-  };
+
+      // When no market cards are selected, use selectedCard for single selection
+      // and selectedHandCards for multiple selection
+      if (selectedCard && selectedCard.uid === card.uid && selectedHandCards.length <= 1) {
+        // Deselect if this is the only selected card
+        setSelectedCard(null);
+        setSelectedHandCards([]);
+        setSelectedAction(null);
+      } else {
+        // Update the hand card selection
+        let newSelectedHandCards;
+        if (selectedHandCards.some(c => c.uid === card.uid)) {
+          // Remove the card if already selected
+          newSelectedHandCards = selectedHandCards.filter(c => c.uid !== card.uid);
+        } else {
+          // Add the card if not selected
+          newSelectedHandCards = [...selectedHandCards, card];
+        }
+
+        setSelectedHandCards(newSelectedHandCards);
+
+        // Set selectedCard and action only when exactly one card is selected
+        if (newSelectedHandCards.length === 1) {
+          setSelectedCard(newSelectedHandCards[0]);
+
+          // Determine available actions based on card type
+          if (newSelectedHandCards[0].type === 'special') {
+            setSelectedAction('play_special');
+          } else {
+            setSelectedAction('add_ingredient');
+          }
+        } else {
+          // Clear selectedCard and action when multiple or no cards selected
+          setSelectedCard(null);
+          setSelectedAction(null);
+        }
+      }
+    };
+
+
+  // Add a function to deselect all cards
+  const handleDeselectAll = () => {
+      setSelectedMarketCards([]);
+      setSelectedHandCards([]);
+      setSelectedCard(null);
+      setSelectedAction(null);
+    };
 
   // Handle adding an ingredient to the borsht
   const handleAddIngredient = () => {
@@ -333,25 +426,53 @@ const Game = ({ roomId, user }) => {
     });
   };
 
+  const isExchangeValid = () => {
+      if (selectedMarketCards.length === 0) return false;
+      if (selectedHandCards.length === 0) return false;
+      if (selectedMarketCards.length !== 1 && selectedHandCards.length !== 1) return false;
+
+      const marketCardsCost = calculateCardsCost(selectedMarketCards);
+      const handCardsCost = calculateCardsCost(selectedHandCards);
+
+      return handCardsCost >= marketCardsCost;
+    };
+
   // Handle exchanging ingredients with the market
   const handleExchange = () => {
-    if (!isCurrentPlayerTurn) return;
+      if (!isCurrentPlayerTurn) return;
 
-    if (!selectedCard) {
-      alert('Please select a card from your hand first');
-      return;
-    }
+      // When no market cards are selected but hand cards are selected
+      if (selectedMarketCards.length === 0 && selectedHandCards.length > 0) {
+        alert('Please select cards from the market to exchange for your selected cards');
+        return;
+      }
 
-    // Show modal or implement UI for exchange
-    // For now, this is a simplified implementation
-    const confirmExchange = window.confirm(`Would you like to exchange the selected card (${selectedCard.id}) for cards from the market?`);
+      // When market cards are selected but no hand cards
+      if (selectedMarketCards.length > 0 && selectedHandCards.length === 0) {
+        alert('Please select cards from your hand to exchange for the market cards');
+        return;
+      }
 
-    if (confirmExchange) {
-      // In a real implementation, you would have UI to select market cards
-      // For now, we'll just show a message
-      alert('Exchange functionality requires additional UI implementation. This would allow you to select cards from the market whose total value does not exceed your card value.');
-    }
-  };
+      // Calculate total costs
+      const marketCardsCost = calculateCardsCost(selectedMarketCards);
+      const handCardsCost = calculateCardsCost(selectedHandCards);
+
+      // Check if the exchange is valid
+      if (handCardsCost < marketCardsCost) {
+        alert(`Your selected cards (${handCardsCost}) must be equal to or greater than the market cards' cost (${marketCardsCost})`);
+        return;
+      }
+
+      // Perform the exchange
+      makeMove({
+        action: 'exchange_ingredients',
+        market_cards: selectedMarketCards.map(card => card.uid),
+        hand_cards: selectedHandCards.map(card => card.uid)
+      });
+
+      // Reset selections after exchange
+      handleDeselectAll();
+    };
 
   // Handle card selection from another player's borsht
   const handleSelectTargetCard = (playerId, cardId) => {
@@ -548,7 +669,8 @@ const Game = ({ roomId, user }) => {
               {market.map((card) => (
                 <div
                   key={card.uid}
-                  className={`borsht-card`}
+                  className={`borsht-card ${selectedMarketCards.some(c => c.uid === card.uid) ? 'selected' : ''}`}
+                  onClick={() => isCurrentPlayerTurn && handleMarketCardSelect(card)}
                   style={{backgroundImage: `url('/games/borscht/cards/${card.id}.png')`}}
                   onMouseEnter={() => setIsZoomed(card.uid)}
                   onMouseLeave={() => setIsZoomed(null)}
@@ -690,23 +812,29 @@ const Game = ({ roomId, user }) => {
                   {handCards.length === 0 ? (
                     <div className="borsht-empty-hand">Draw cards to start playing</div>
                   ) : (
-                    handCards.map((card) => (
-                      <div
-                        key={card.uid}
-                        className={`borsht-card ${selectedCard && selectedCard.uid === card.uid ? 'selected' : ''}`}
-                        onClick={() => handleCardSelect(card)}
-                        style={{backgroundImage: `url('/games/borscht/cards/${card.id}.png')`}}
-                        onMouseEnter={() => setIsZoomed(card.uid)}
-                        onMouseLeave={() => setIsZoomed(null)}
-                      >
-                        {isZoomed === card.uid && (
-                          <div className="borsht-card-tooltip">
-                            <strong>{card.name || card.id}</strong>
-                            {(card.effect_description || card.effect) && <p>{card.effect_description || card.effect}</p>}
-                          </div>
-                        )}
-                      </div>
-                    ))
+                    handCards.map((card) => {
+                      // Determine if this card is selected in either mode
+                      const isSelected = selectedHandCards.some(c => c.uid === card.uid);
+
+                      return (
+                        <div
+                          key={card.uid}
+                          className={`borsht-card ${isSelected ? 'selected' : ''}`}
+                          onClick={() => handleCardSelect(card)}
+                          style={{backgroundImage: `url('/games/borscht/cards/${card.id}.png')`}}
+                          onMouseEnter={() => setIsZoomed(card.uid)}
+                          onMouseLeave={() => setIsZoomed(null)}
+                        >
+                          {isZoomed === card.uid && (
+                            <div className="borsht-card-tooltip">
+                              <strong>{card.name || card.id}</strong>
+                              {(card.effect_description || card.effect) && <p>{card.effect_description || card.effect}</p>}
+                              <p>Cost: {card.cost || 1}</p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
                   )}
                 </div>
               </div>
@@ -718,50 +846,97 @@ const Game = ({ roomId, user }) => {
                 <div className="borsht-actions-title">Actions</div>
                 <div className="borsht-action-buttons">
                   <button
-                      className="borsht-action-button"
-                      onClick={handleAddIngredient}
-                      disabled={!isCurrentPlayerTurn || !selectedCard || !canAddCardToBorsht(selectedCard)}
-                      title={
-                        !isCurrentPlayerTurn
-                          ? "Not your turn"
-                          : !selectedCard
-                            ? "Select a card first"
-                            : selectedCard.type === 'special'
-                              ? "Can't add special cards to borsht"
-                              : borshtCards.some(borshtCard => borshtCard.id === selectedCard.id)
-                                ? "This ingredient is already in your borsht"
-                              : (selectedCard.type === 'rare' || selectedCard.type === 'regular') &&
-                                !recipe.ingredients?.some(i => i.toLowerCase() === selectedCard.id.toLowerCase())
-                                ? "This ingredient is not in your recipe"
-                                : "Add selected ingredient to your borsht"
-                      }
+                    className="borsht-action-button"
+                    onClick={handleAddIngredient}
+                    disabled={!isCurrentPlayerTurn || !selectedCard || selectedCard.type === 'special' || selectedMarketCards.length > 0 || selectedHandCards.length !== 1 || !canAddCardToBorsht(selectedCard)}
+                    title={
+                      !isCurrentPlayerTurn
+                        ? "Not your turn"
+                        : selectedMarketCards.length > 0
+                          ? "Can't add ingredients while exchanging with market"
+                        : selectedHandCards.length !== 1
+                          ? "Select exactly one card"
+                        : !selectedCard
+                          ? "Select a card first"
+                        : selectedCard.type === 'special'
+                          ? "Can't add special cards to borsht"
+                        : borshtCards.some(borshtCard => borshtCard.id === selectedCard.id)
+                          ? "This ingredient is already in your borsht"
+                        : (selectedCard.type === 'rare' || selectedCard.type === 'regular') &&
+                          !recipe.ingredients?.some(i => i.toLowerCase() === selectedCard.id.toLowerCase())
+                          ? "This ingredient is not in your recipe"
+                          : "Add selected ingredient to your borsht"
+                    }
                   >
                     Add Ingredient
                   </button>
                   <button
                     className="borsht-action-button"
                     onClick={handleDrawCards}
-                    disabled={!isCurrentPlayerTurn}
-                    title={!isCurrentPlayerTurn ? "Not your turn" : "Draw 2 cards from the deck"}
+                    disabled={!isCurrentPlayerTurn || selectedMarketCards.length > 0}
+                    title={
+                      !isCurrentPlayerTurn
+                        ? "Not your turn"
+                        : selectedMarketCards.length > 0
+                          ? "Can't draw cards while exchanging with market"
+                          : "Draw 2 cards from the deck"
+                    }
                   >
                     Draw 2 Cards
                   </button>
                   <button
                     className="borsht-action-button"
                     onClick={handlePlaySpecial}
-                    disabled={!isCurrentPlayerTurn || !selectedCard || selectedCard.type !== 'special'}
-                    title={!isCurrentPlayerTurn ? "Not your turn" : !selectedCard ? "Select a special card first" : selectedCard.type !== 'special' ? "Selected card is not a special card" : "Play the selected special card"}
+                    disabled={!isCurrentPlayerTurn || !selectedCard || selectedCard.type !== 'special' || selectedMarketCards.length > 0 || selectedHandCards.length !== 1}
+                    title={
+                      !isCurrentPlayerTurn
+                        ? "Not your turn"
+                        : selectedMarketCards.length > 0
+                          ? "Can't play special cards while exchanging with market"
+                        : selectedHandCards.length !== 1
+                          ? "Select exactly one special card"
+                        : !selectedCard
+                          ? "Select a special card first"
+                          : selectedCard.type !== 'special'
+                            ? "Selected card is not a special card"
+                            : "Play the selected special card"
+                    }
                   >
                     Play Special
                   </button>
                   <button
                     className="borsht-action-button"
                     onClick={handleExchange}
-                    disabled={!isCurrentPlayerTurn}
-                    title={!isCurrentPlayerTurn ? "Not your turn" : "Exchange cards with the market"}
+                    disabled={
+                      !isCurrentPlayerTurn ||
+                      (selectedMarketCards.length === 0 && selectedHandCards.length === 0) ||
+                      (selectedMarketCards.length > 0 && !isExchangeValid())
+                    }
+                    title={
+                      !isCurrentPlayerTurn
+                        ? "Not your turn"
+                        : selectedMarketCards.length === 0 && selectedHandCards.length === 0
+                          ? "Select cards to exchange"
+                        : selectedMarketCards.length > 0 && selectedHandCards.length === 0
+                          ? "Select cards from your hand to exchange"
+                        : selectedMarketCards.length > 1 && selectedHandCards.length > 1
+                          ? "Valid exchanges only many-to-1 or 1-to-many"
+                        : selectedMarketCards.length > 0 && !isExchangeValid()
+                          ? "Your selected cards must be equal to or greater than the market cards' cost"
+                          : "Exchange selected cards"
+                    }
                   >
                     Exchange
                   </button>
+                  {(selectedMarketCards.length > 0 || selectedHandCards.length > 0 || selectedCard) && (
+                  <button
+                    className="borsht-button borsht-action-button"
+                    onClick={handleDeselectAll}
+                    title="Deselect all cards"
+                  >
+                    <span>Deselect All</span>
+                  </button>
+                )}
                 </div>
               </div>
             </div>
@@ -901,6 +1076,25 @@ const Game = ({ roomId, user }) => {
                 random_discard: true,
               }));
               setDiscardData(null);
+            }}
+          />
+        )}
+
+      {marketDiscardData && (
+          <MarketDiscardSelection
+            market={marketDiscardData.market}
+            discardCount={marketDiscardData.discard_count}
+            timeRemaining={marketDiscardData.timeout}
+            onSubmit={handleMarketDiscardSelection}
+            onCancel={() => {
+              // Send an empty selection to the server to trigger random selection
+              api.getWs().send(JSON.stringify({
+                type: 'request_response',
+                request_id: marketDiscardData.request_id,
+                selected_cards: [],
+                random_discard: true,
+              }));
+              setMarketDiscardData(null);
             }}
           />
         )}
