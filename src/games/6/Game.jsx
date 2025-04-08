@@ -719,7 +719,7 @@ const Game = ({ roomId, user }) => {
                     </div>
                   )}
                 </div>
-                {gameState?.free_refresh && (
+                {isCurrentPlayerTurn && gameState?.free_refresh && (
                     <button
                         className="borsht-button borsht-refresh-button ${}"
                         onClick={handleFreeMarketRefresh}
