@@ -5,6 +5,7 @@ import DecisionPopup from './DecisionPopup';
 import PlayerDecision from './PlayerDecision';
 import RecipeSelection from './RecipeSelection';
 import DiscardSelection from './DiscardSelection';
+import OliveOilSelection from './OliveOilSelection';
 import MarketDiscardSelection from './MarketDiscardSelection';
 
 import api from '../../utils/api';
@@ -24,13 +25,14 @@ const Game = ({ roomId, user }) => {
   const [selectedMarketCards, setSelectedMarketCards] = useState([]);
   const [selectedHandCards, setSelectedHandCards] = useState([]);
 
-  // Recipe decision
+  //  decision
   const [pendingRequest, setPendingRequest] = useState(null);
   const [recipeOptions, setRecipeOptions] = useState([]);
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [timerInterval, setTimerInterval] = useState(null);
   const [discardData, setDiscardData] = useState(null);
   const [marketDiscardData, setMarketDiscardData] = useState(null);
+  const [oliveOilData, setOliveOilData] = useState(null);
 
   // References for card containers
   const handContainerRef = useRef(null);
@@ -113,6 +115,15 @@ const Game = ({ roomId, user }) => {
           if (data.effect === 'defense_request') {
             handleDefenseRequest(data);
           }
+
+        } else if (data.type === 'olive_oil_selection') {
+          // Store the olive oil selection data
+          setOliveOilData({
+            cards: data.cards,
+            select_count: data.select_count,
+            request_id: data.request_id,
+            expires_at: data.expires_at,
+          });
 
         } else if (data.type === 'recipe_completed') {
           // Someone completed their recipe
@@ -217,6 +228,20 @@ const Game = ({ roomId, user }) => {
       setPendingRequest(null);
       setRecipeOptions([]);
   };
+
+  const handleOliveOilSelection = (selectedCardIds) => {
+      if (!oliveOilData || !oliveOilData.request_id) return;
+
+      // Send the selection to the server
+      api.getWs().send(JSON.stringify({
+        type: 'request_response',
+        request_id: oliveOilData.request_id,
+        selected_cards: selectedCardIds,
+      }));
+
+      // Clear the olive oil data
+      setOliveOilData(null);
+    };
 
   // Add this useEffect for cleanup
   useEffect(() => {
@@ -355,19 +380,6 @@ const Game = ({ roomId, user }) => {
       setPendingRequest(null);
     };
 
-    // Add this function to handle olive oil (look_top_5) selection
-    const handleOliveOilSelection = (selectedCardIds) => {
-      if (!selectedCard || selectedCard.uid !== 'olive_oil') return;
-
-      makeMove({
-        action: 'play_special',
-        card_id: selectedCard.uid,
-        selected_cards: selectedCardIds
-      });
-
-      setPendingRequest(null);
-    };
-
   // Handle playing a special card
   const handlePlaySpecial = () => {
     if (!isCurrentPlayerTurn || !selectedCard || !selectedCard.effect) {
@@ -379,17 +391,6 @@ const Game = ({ roomId, user }) => {
       if (selectedCard.effect === 'discard_or_take') {
         setPendingRequest({
           type: 'black_pepper_decision'
-        });
-        return;
-      }
-
-      // For Olive Oil, show card selection popup
-      if (selectedCard.effect === 'look_top_5') {
-        // In a real implementation, you would fetch top 5 cards from server
-        setPendingRequest({
-          type: 'olive_oil_decision',
-          // cards would come from server in real implementation
-          cards: []
         });
         return;
       }
@@ -1095,6 +1096,25 @@ const Game = ({ roomId, user }) => {
                 random_discard: true,
               }));
               setMarketDiscardData(null);
+            }}
+          />
+        )}
+
+      {oliveOilData && (
+          <OliveOilSelection
+            cards={oliveOilData.cards}
+            selectCount={oliveOilData.select_count}
+            expiresAt={oliveOilData.expires_at}
+            onSubmit={handleOliveOilSelection}
+            onCancel={() => {
+              // Send an empty selection to the server to trigger random selection
+              api.getWs().send(JSON.stringify({
+                type: 'request_response',
+                request_id: oliveOilData.request_id,
+                selected_cards: [],
+                random_selection: true,
+              }));
+              setOliveOilData(null);
             }}
           />
         )}
