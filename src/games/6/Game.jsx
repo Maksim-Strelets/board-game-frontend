@@ -5,6 +5,7 @@ import DecisionPopup from './DecisionPopup';
 import PlayerDecision from './PlayerDecision';
 import GingerSelection from './GingerSelection';
 import RecipeSelection from './RecipeSelection';
+import SourCreamDefense from './SourCreamDefense';
 import DiscardSelection from './DiscardSelection';
 import OliveOilSelection from './OliveOilSelection';
 import CinnamonSelection from './CinnamonSelection';
@@ -39,6 +40,7 @@ const Game = ({ roomId, user }) => {
   const [oliveOilData, setOliveOilData] = useState(null);
   const [gingerData, setGingerData] = useState(null);
   const [redPepperData, setRedPepperData] = useState(null);
+  const [defenseData, setDefenseData] = useState(null);
 
   // References for card containers
   const handContainerRef = useRef(null);
@@ -116,11 +118,15 @@ const Game = ({ roomId, user }) => {
             expires_at: data.expires_at,
           });
 
-        } else if (data.type === 'special_effect') {
-          // Handle special effects like "Defense Request"
-          if (data.effect === 'defense_request') {
-            handleDefenseRequest(data);
-          }
+        } else if (data.type === 'defense_request') {
+          // Store the defense request data
+          setDefenseData({
+            attacker: data.attacker,
+            attackCard: data.card,
+            targetCards: data.target_cards,
+            request_id: data.request_id,
+            expires_at: data.expires_at
+          });
 
         } else if (data.type === 'olive_oil_selection') {
           // Store the olive oil selection data
@@ -329,31 +335,33 @@ const Game = ({ roomId, user }) => {
     };
   }, [timerInterval]);
 
-  // Handle defense request from another player
-    const handleDefenseRequest = (data) => {
-      if (!data.request_id) return;
+  const handleDefend = () => {
+      if (!defenseData || !defenseData.request_id) return;
 
-      // Set up defense request UI
-      setPendingRequest({
-        type: 'defense_request',
-        request_id: data.request_id,
-        attacker: data.attacker,
-        card: data.card
-      });
-    };
-
-    const handleDefenseResponse = (useDefense) => {
-      if (!pendingRequest || pendingRequest.type !== 'defense_request') return;
-
+      // Send the response to use defense
       api.getWs().send(JSON.stringify({
         type: 'request_response',
-        request_id: pendingRequest.request_id,
-        use_defense: useDefense
+        request_id: defenseData.request_id,
+        use_defense: true
       }));
 
-      setPendingRequest(null);
+      // Clear the defense data
+      setDefenseData(null);
     };
 
+  const handleDeclineDefense = () => {
+      if (!defenseData || !defenseData.request_id) return;
+
+      // Send the response to not use defense
+      api.getWs().send(JSON.stringify({
+        type: 'request_response',
+        request_id: defenseData.request_id,
+        use_defense: false
+      }));
+
+      // Clear the defense data
+      setDefenseData(null);
+    };
 
   // Make a move in the game
   const makeMove = (moveData) => {
@@ -1115,27 +1123,15 @@ const Game = ({ roomId, user }) => {
           />
         )}
 
-        {pendingRequest?.type === 'defense_request' && (
-          <DecisionPopup
-            title="Defense Request"
-            message={`Player ${pendingRequest.attacker} is targeting you with ${pendingRequest.card?.name || 'a special card'}. Do you want to use Sour Cream to defend?`}
-            showClose={false}
-          >
-            <div className="borsht-defense-actions">
-              <button
-                className="borsht-button borsht-button-confirm"
-                onClick={() => handleDefenseResponse(true)}
-              >
-                Yes, use Sour Cream
-              </button>
-              <button
-                className="borsht-button borsht-button-cancel"
-                onClick={() => handleDefenseResponse(false)}
-              >
-                No, don't defend
-              </button>
-            </div>
-          </DecisionPopup>
+        {defenseData && (
+          <SourCreamDefense
+            attacker={defenseData.attacker}
+            attackCard={defenseData.attackCard}
+            targetCards={defenseData.targetCards}
+            expiresAt={defenseData.expires_at}
+            onDefend={handleDefend}
+            onDecline={handleDeclineDefense}
+          />
         )}
 
         {pendingRequest?.type === 'black_pepper_decision' && (
@@ -1159,39 +1155,6 @@ const Game = ({ roomId, user }) => {
             showCancel={true}
             cancelLabel="Cancel"
           />
-        )}
-
-        {pendingRequest?.type === 'olive_oil_decision' && pendingRequest.cards && (
-          <DecisionPopup
-            title="Olive Oil Effect"
-            message="Look at the top 5 cards of the deck and choose 2 to keep:"
-            onClose={() => setPendingRequest(null)}
-          >
-            <div className="borsht-olive-oil-cards">
-              {pendingRequest.cards.map((card) => (
-                <div
-                  key={card.uid}
-                  className="borsht-card"
-                  style={{backgroundImage: `url('/games/borscht/cards/${card.id}.png')`}}
-                >
-                  {/* Card content */}
-                </div>
-              ))}
-            </div>
-            <div className="borsht-decision-actions">
-              <button
-                className="borsht-button borsht-button-confirm"
-                onClick={() => {
-                  // In a real implementation, you would have UI to select 2 cards
-                  // For now we'll just show a placeholder
-                  alert("In a full implementation, this would have UI to select 2 cards");
-                  setPendingRequest(null);
-                }}
-              >
-                Confirm Selection
-              </button>
-            </div>
-          </DecisionPopup>
         )}
 
       {cinnamonData && (

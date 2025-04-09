@@ -1763,3 +1763,115 @@
 .borsht-decision-action:hover {
   z-index: 10;
 }
+
+/* Add these styles to your Game.css file */
+
+.borsht-defense-display {
+  margin: 20px 0;
+  padding: 15px;
+  background-color: #fff5e6;
+  border-radius: 10px;
+  border: 1px solid #e9c46a;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.borsht-attack-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+}
+
+.borsht-attacker-section, .borsht-defense-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.borsht-defense-section {
+  margin-top: 20px;
+  padding-top: 10px;
+  border-top: 1px dashed #e9c46a;
+}
+
+.borsht-card-label {
+  font-weight: bold;
+  color: #264653;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.borsht-defense-arrow {
+  font-size: 2rem;
+  color: #e76f51;
+  font-weight: bold;
+  align-self: center;
+}
+
+.borsht-attack-card {
+  box-shadow: 0 0 0 2px #e76f51, 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.borsht-defense-card {
+  box-shadow: 0 0 0 2px #2a9d8f, 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.borsht-card.borsht-attack-card, .borsht-card.borsht-defense-card {
+  width: 90px;
+  height: 135px;
+  transform: none;
+  cursor: default;
+}
+
+.borsht-card.borsht-attack-card:hover,
+.borsht-card.borsht-defense-card:hover {
+  transform: translateY(-5px);
+  z-index: 1;
+}
+
+/* Target cards section styles */
+.borsht-target-cards-section {
+  padding: 10px;
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+}
+
+.borsht-target-cards {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px;
+}
+
+.borsht-target-cards .borsht-card {
+  width: 70px;
+  height: 105px;
+  transform: none;
+  cursor: default;
+  box-shadow: 0 0 0 2px #ff9800, 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.borsht-target-cards .borsht-card:hover {
+  transform: translateY(-5px);
+  z-index: 2;
+}
+
+.borsht-target-cards-empty {
+  font-style: italic;
+  color: #666;
+  text-align: center;
+  padding: 10px;
+}
+
+/* Media queries for smaller screens */
+@media (max-width: 768px) {
+  .borsht-attack-flow {
+    flex-direction: column;
+  }
+
+  .borsht-defense-arrow {
+    transform: rotate(90deg);
+  }
+}
