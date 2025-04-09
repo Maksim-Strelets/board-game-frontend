@@ -81,9 +81,13 @@ const CinnamonSelection = ({
                 onClick={() => handleCardSelect(card)}
                 style={{backgroundImage: `url('/games/borscht/cards/${card.id}.png')`}}
               >
-                <div className="borsht-card-tooltip">
+                <div className="borsht-selection-card-tooltip">
                   <strong>{card.name || card.id}</strong>
-                  {card.type === 'special' && <p>{card.effect_description || card.effect}</p>}
+                  {card.effect_description ? (
+                    <p>{card.effect_description}</p>
+                  ) : card.effect ? (
+                    <p>Effect: {card.effect}</p>
+                  ) : null}
                 </div>
               </div>
             ))

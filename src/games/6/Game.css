@@ -1875,3 +1875,85 @@
     transform: rotate(90deg);
   }
 }
+
+/* Add these styles to your Game.css file */
+
+/* General card hover effects for all selection components */
+.borsht-selection-card-container {
+  position: relative;
+}
+
+/* Card tooltips for selection popups */
+.borsht-selection-card-tooltip {
+  position: absolute;
+  bottom: 110%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 180px;
+  background-color: rgba(38, 70, 83, 0.95);
+  color: white;
+  padding: 10px;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  font-size: 0.85rem;
+  text-align: center;
+  z-index: 200;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+  white-space: normal;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.borsht-selection-card-tooltip strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.95rem;
+}
+
+.borsht-selection-card-tooltip p {
+  margin: 4px 0;
+  opacity: 0.9;
+  font-size: 0.8rem;
+}
+
+/* Triangle pointer for tooltip */
+.borsht-selection-card-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: rgba(38, 70, 83, 0.95) transparent transparent transparent;
+}
+
+/* Show tooltip on hover */
+.borsht-discard-selection-cards .borsht-card:hover .borsht-selection-card-tooltip,
+.borsht-target-cards .borsht-card:hover .borsht-selection-card-tooltip,
+.borsht-recipe-options .borsht-card:hover .borsht-selection-card-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Enhanced card hover effects for selection popups */
+.borsht-discard-selection-cards .borsht-card,
+.borsht-target-cards .borsht-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.borsht-discard-selection-cards .borsht-card:hover,
+.borsht-target-cards .borsht-card:hover {
+  transform: translateY(-15px) scale(1.3);
+  z-index: 10;
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.25);
+}
+
+/* CinnamonSelection, GingerSelection and OliveOilSelection specific scaling */
+.borsht-discard-selection-cards .borsht-card,
+.borsht-target-cards .borsht-card {
+  position: relative;
+  overflow: visible;
+}

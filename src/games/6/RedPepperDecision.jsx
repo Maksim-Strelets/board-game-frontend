@@ -43,7 +43,16 @@ const RedPepperDecision = ({
           <div
             className="borsht-card"
             style={{backgroundImage: `url('/games/borscht/cards/${targetCard.id}.png')`}}
-          />
+          >
+            <div className="borsht-selection-card-tooltip">
+              <strong>{targetCard.name || targetCard.id}</strong>
+              {targetCard.effect_description ? (
+                <p>{targetCard.effect_description}</p>
+              ) : targetCard.effect ? (
+                <p>Effect: {targetCard.effect}</p>
+              ) : null}
+            </div>
+          </div>
         </div>
 
         <div className="borsht-decision-options">

@@ -55,7 +55,16 @@ const SourCreamDefense = ({
               <div
                 className="borsht-card borsht-attack-card"
                 style={{backgroundImage: `url('/games/borscht/cards/${attackCard?.id || 'red_pepper'}.png')`}}
-              />
+              >
+                <div className="borsht-selection-card-tooltip">
+                  <strong>{attackCard?.name || 'Special Card'}</strong>
+                  {attackCard?.effect_description ? (
+                    <p>{attackCard.effect_description}</p>
+                  ) : attackCard?.effect ? (
+                    <p>Effect: {attackCard.effect}</p>
+                  ) : null}
+                </div>
+              </div>
             </div>
 
             <div className="borsht-defense-arrow">→</div>
@@ -64,12 +73,16 @@ const SourCreamDefense = ({
               <div className="borsht-card-label">Target Cards:</div>
               <div className="borsht-target-cards">
                 {targetCards && targetCards.length > 0 ? (
-                  targetCards.map((card) => (
+                  targetCards.map((card, index) => (
                     <div
-                      key={card.uid}
+                      key={index}
                       className="borsht-card"
                       style={{backgroundImage: `url('/games/borscht/cards/${card.id}.png')`}}
-                    />
+                    >
+                      <div className="borsht-selection-card-tooltip">
+                        <strong>{card.name || card.id}</strong>
+                      </div>
+                    </div>
                   ))
                 ) : (
                   <div className="borsht-target-cards-empty">No specific cards targeted</div>
@@ -83,7 +96,12 @@ const SourCreamDefense = ({
             <div
               className="borsht-card borsht-defense-card"
               style={{backgroundImage: `url('/games/borscht/cards/sour_cream.png')`}}
-            />
+            >
+              <div className="borsht-selection-card-tooltip">
+                <strong>Sour Cream</strong>
+                <p>Defense card that can block special card effects.</p>
+              </div>
+            </div>
           </div>
         </div>
 

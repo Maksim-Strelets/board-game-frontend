@@ -81,7 +81,14 @@ const GingerSelection = ({
                 onClick={() => handleCardSelect(card)}
                 style={{backgroundImage: `url('/games/borscht/cards/${card.id}.png')`}}
               >
-                {/* Card tooltip could be added here if needed */}
+                <div className="borsht-selection-card-tooltip">
+                  <strong>{card.name || card.id}</strong>
+                  {card.effect_description ? (
+                    <p>{card.effect_description}</p>
+                  ) : card.effect ? (
+                    <p>Effect: {card.effect}</p>
+                  ) : null}
+                </div>
               </div>
             ))
           ) : (
