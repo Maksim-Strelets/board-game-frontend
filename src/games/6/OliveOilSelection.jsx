@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const OliveOilSelection = ({ cards, selectCount, onSubmit, onCancel, expiresAt }) => {
+const OliveOilSelection = ({ cards, selectCount, onSubmit, onCancel, expiresAt, hidePopup }) => {
   const [selectedCards, setSelectedCards] = useState([]);
   const [timeRemaining, setTimeRemaining] = useState(30);
   const [timerInterval, setTimerInterval] = useState(null);
@@ -100,6 +100,12 @@ const OliveOilSelection = ({ cards, selectCount, onSubmit, onCancel, expiresAt }
               onClick={handleCancel}
             >
               Random Selection
+            </button>
+            <button
+             className="borsht-button borsht-action-button"
+             onClick={hidePopup}
+            >
+              Hide Popup
             </button>
           </div>
         </div>

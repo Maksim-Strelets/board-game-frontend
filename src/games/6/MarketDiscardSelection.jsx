@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle } from 'lucide-react';
 
-const MarketDiscardSelection = ({ market, discardCount, expiresAt, onSubmit, onCancel }) => {
+const MarketDiscardSelection = ({ market, discardCount, expiresAt, onSubmit, onCancel, hidePopup }) => {
   const now = Math.floor(Date.now() / 1000);
   const timeRemaining = expiresAt - now || 30; // Default
 
@@ -103,6 +103,12 @@ const MarketDiscardSelection = ({ market, discardCount, expiresAt, onSubmit, onC
             onClick={onCancel}
           >
             Random Selection
+          </button>
+          <button
+           className="borsht-button borsht-action-button"
+           onClick={hidePopup}
+          >
+            Hide Popup
           </button>
         </div>
       </div>

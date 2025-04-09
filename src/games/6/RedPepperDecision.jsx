@@ -6,7 +6,8 @@ const RedPepperDecision = ({
   playerRecipe,
   playerBorsht,
   onSelect,
-  onCancel
+  onCancel,
+  hidePopup,
 }) => {
   // Check if card can be stolen (in recipe but not already in borsht)
   const canSteal = () => {
@@ -84,6 +85,12 @@ const RedPepperDecision = ({
             data-tooltip="Cancel and keep the Red Pepper card in your hand"
           >
             Cancel
+          </button>
+          <button
+           className="borsht-button borsht-action-button"
+           onClick={hidePopup}
+          >
+            Hide Popup
           </button>
         </div>
       </div>

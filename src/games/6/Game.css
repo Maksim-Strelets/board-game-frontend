@@ -1957,3 +1957,13 @@
   position: relative;
   overflow: visible;
 }
+
+.borsht-show-popup-button {
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  margin: 5px;
+  height: 100%;
+  font-size: x-large;
+}

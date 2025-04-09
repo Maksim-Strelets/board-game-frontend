@@ -6,7 +6,8 @@ const GingerSelection = ({
   selectCount,
   expiresAt,
   onSubmit,
-  onCancel
+  onCancel,
+  hidePopup,
 }) => {
   // Ensure market is always an array
   const marketCards = Array.isArray(market) ? market : [];
@@ -109,6 +110,12 @@ const GingerSelection = ({
             onClick={onCancel}
           >
             Random Selection
+          </button>
+          <button
+           className="borsht-button borsht-action-button"
+           onClick={hidePopup}
+          >
+            Hide Popup
           </button>
         </div>
       </div>

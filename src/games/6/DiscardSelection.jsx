@@ -6,7 +6,8 @@ const DiscardSelection = ({
   expiresAt,
   recipe,
   onSubmit,
-  onCancel
+  onCancel,
+  hidePopup,
 }) => {
   const now = Math.floor(Date.now() / 1000);
   const timeRemaining = expiresAt - now || 30; // Default
@@ -106,6 +107,12 @@ const DiscardSelection = ({
                 Random Selection
               </button>
             )}
+            <button
+             className="borsht-button borsht-action-button"
+             onClick={hidePopup}
+            >
+              Hide Popup
+            </button>
           </div>
         </div>
       </div>

@@ -6,7 +6,8 @@ const SourCreamDefense = ({
   targetCards,
   expiresAt,
   onDefend,
-  onDecline
+  onDecline,
+  hidePopup,
 }) => {
   const [timeRemaining, setTimeRemaining] = useState(30);
 
@@ -120,6 +121,12 @@ const SourCreamDefense = ({
             data-tooltip="Allow the attack to proceed"
           >
             Don't Defend
+          </button>
+          <button
+           className="borsht-button borsht-action-button"
+           onClick={hidePopup}
+          >
+            Hide Popup
           </button>
         </div>
       </div>

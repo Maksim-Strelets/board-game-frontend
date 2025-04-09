@@ -6,7 +6,8 @@ const CinnamonSelection = ({
   selectCount,
   expiresAt,
   onSubmit,
-  onCancel
+  onCancel,
+  hidePopup,
 }) => {
   // Ensure discard_pile is always an array
   const discardPile = Array.isArray(discard_pile) ? discard_pile : [];
@@ -109,6 +110,12 @@ const CinnamonSelection = ({
             onClick={onCancel}
           >
             Random Selection
+          </button>
+          <button
+           className="borsht-button borsht-action-button"
+           onClick={hidePopup}
+          >
+            Hide Popup
           </button>
         </div>
       </div>

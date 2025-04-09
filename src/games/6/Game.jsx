@@ -41,6 +41,7 @@ const Game = ({ roomId, user }) => {
   const [gingerData, setGingerData] = useState(null);
   const [redPepperData, setRedPepperData] = useState(null);
   const [defenseData, setDefenseData] = useState(null);
+  const [showActionPanel, setShowActionPanel] = useState(true);
 
   // References for card containers
   const handContainerRef = useRef(null);
@@ -221,6 +222,10 @@ const Game = ({ roomId, user }) => {
 
       // Clear the discard data
       setDiscardData(null);
+    };
+
+  const toggleActionPanel = () => {
+      setShowActionPanel(!showActionPanel);
     };
 
   const handleMarketDiscardSelection = (selectedCardIds) => {
@@ -969,118 +974,129 @@ const Game = ({ roomId, user }) => {
 
             {/* Column 2: Actions */}
             <div className="borsht-actions-container">
-              <div className="borsht-actions-panel">
-                <div className="borsht-actions-title">Actions</div>
-                <div className="borsht-action-buttons">
-                  <button
-                    className="borsht-action-button"
-                    onClick={handleAddIngredient}
-                    disabled={!isCurrentPlayerTurn || !selectedCard || selectedCard.type === 'special' || selectedMarketCards.length > 0 || selectedHandCards.length !== 1 || !canAddCardToBorsht(selectedCard)}
-                    data-tooltip={
-                      !isCurrentPlayerTurn
-                        ? "Not your turn"
-                        : selectedMarketCards.length > 0
-                          ? "Can't add ingredients while exchanging with market"
-                        : selectedHandCards.length !== 1
-                          ? "Select exactly one card"
-                        : !selectedCard
-                          ? "Select a card first"
-                        : selectedCard.type === 'special'
-                          ? "Can't add special cards to borsht"
-                        : borshtCards.some(borshtCard => borshtCard.id === selectedCard.id)
-                          ? "This ingredient is already in your borsht"
-                        : (selectedCard.type === 'rare' || selectedCard.type === 'regular') &&
-                          !recipe.ingredients?.some(i => i.toLowerCase() === selectedCard.id.toLowerCase())
-                          ? "This ingredient is not in your recipe"
-                          : "Add selected ingredient to your borsht"
-                    }
-                  >
-                    Add Ingredient
-                  </button>
-                  <button
-                    className="borsht-action-button"
-                    onClick={handleDrawCards}
-                    disabled={!isCurrentPlayerTurn || selectedMarketCards.length > 0}
-                    data-tooltip={
-                      !isCurrentPlayerTurn
-                        ? "Not your turn"
-                        : selectedMarketCards.length > 0
-                          ? "Can't draw cards while exchanging with market"
-                          : "Draw 2 cards from the deck"
-                    }
-                  >
-                    Draw 2 Cards
-                  </button>
-                  <button
-                    className="borsht-action-button"
-                    onClick={handlePlaySpecial}
-                    disabled={
-                      !isCurrentPlayerTurn ||
-                      !selectedCard ||
-                      selectedCard.type !== 'special' ||
-                      selectedMarketCards.length > 0 ||
-                      selectedHandCards.length !== 1 ||
-                      (selectedCard && selectedCard.id === 'cinnamon' && (!gameState.discard_pile_size || gameState.discard_pile_size === 0)) ||
-                      (selectedCard && selectedCard.id === 'chili_pepper' && (!targetPlayer || !targetCard)) ||
-                      (gameState?.first_finisher && targetPlayer === gameState?.first_finisher)
-                    }
-                    data-tooltip={
-                      !isCurrentPlayerTurn
-                        ? "Not your turn"
-                        : selectedMarketCards.length > 0
-                          ? "Can't play special cards while exchanging with market"
-                        : selectedHandCards.length !== 1
-                          ? "Select exactly one special card"
-                        : !selectedCard
-                          ? "Select a special card first"
-                        : selectedCard.type !== 'special'
-                          ? "Selected card is not a special card"
-                        : gameState?.first_finisher && targetPlayer === gameState?.first_finisher
-                          ? "Cannot use special cards against first finisher"
-                        : (selectedCard.id === 'cinnamon' && (!gameState.discard_pile_size || gameState.discard_pile_size === 0))
-                          ? "Cannot play Cinnamon when the discard pile is empty"
-                        : (selectedCard.id === 'chili_pepper' && (!targetPlayer || !targetCard))
-                          ? "Select a card from an opponent's borsht first"
-                          : "Play the selected special card"
-                    }
-                  >
-                    Play Special
-                  </button>
-                  <button
-                    className="borsht-action-button"
-                    onClick={handleExchange}
-                    disabled={
-                      !isCurrentPlayerTurn ||
-                      (selectedMarketCards.length === 0 || selectedHandCards.length === 0) ||
-                      (selectedMarketCards.length > 0 && !isExchangeValid())
-                    }
-                    data-tooltip={
-                      !isCurrentPlayerTurn
-                        ? "Not your turn"
-                        : selectedMarketCards.length === 0 || selectedHandCards.length === 0
-                          ? "Select cards to exchange"
-                        : selectedMarketCards.length > 0 && selectedHandCards.length === 0
-                          ? "Select cards from your hand to exchange"
-                        : selectedMarketCards.length > 1 && selectedHandCards.length > 1
-                          ? "Valid exchanges only many-to-1 or 1-to-many"
-                        : selectedMarketCards.length > 0 && !isExchangeValid()
-                          ? "Your selected cards must be equal to or greater than the market cards' cost"
-                          : "Exchange selected cards"
-                    }
-                  >
-                    Exchange
-                  </button>
-                  {(selectedMarketCards.length > 0 || selectedHandCards.length > 0 || selectedCard) && (
-                  <button
-                    className="borsht-button borsht-action-button"
-                    onClick={handleDeselectAll}
-                    title="Deselect all cards"
-                  >
-                    <span>Deselect All</span>
-                  </button>
-                )}
+              {showActionPanel ? (
+                <div className="borsht-actions-panel">
+                  <div className="borsht-actions-title">Actions</div>
+                  <div className="borsht-action-buttons">
+                    <button
+                      className="borsht-action-button"
+                      onClick={handleAddIngredient}
+                      disabled={!isCurrentPlayerTurn || !selectedCard || selectedCard.type === 'special' || selectedMarketCards.length > 0 || selectedHandCards.length !== 1 || !canAddCardToBorsht(selectedCard)}
+                      data-tooltip={
+                        !isCurrentPlayerTurn
+                          ? "Not your turn"
+                          : selectedMarketCards.length > 0
+                            ? "Can't add ingredients while exchanging with market"
+                          : selectedHandCards.length !== 1
+                            ? "Select exactly one card"
+                          : !selectedCard
+                            ? "Select a card first"
+                          : selectedCard.type === 'special'
+                            ? "Can't add special cards to borsht"
+                          : borshtCards.some(borshtCard => borshtCard.id === selectedCard.id)
+                            ? "This ingredient is already in your borsht"
+                          : (selectedCard.type === 'rare' || selectedCard.type === 'regular') &&
+                            !recipe.ingredients?.some(i => i.toLowerCase() === selectedCard.id.toLowerCase())
+                            ? "This ingredient is not in your recipe"
+                            : "Add selected ingredient to your borsht"
+                      }
+                    >
+                      Add Ingredient
+                    </button>
+                    <button
+                      className="borsht-action-button"
+                      onClick={handleDrawCards}
+                      disabled={!isCurrentPlayerTurn || selectedMarketCards.length > 0}
+                      data-tooltip={
+                        !isCurrentPlayerTurn
+                          ? "Not your turn"
+                          : selectedMarketCards.length > 0
+                            ? "Can't draw cards while exchanging with market"
+                            : "Draw 2 cards from the deck"
+                      }
+                    >
+                      Draw 2 Cards
+                    </button>
+                    <button
+                      className="borsht-action-button"
+                      onClick={handlePlaySpecial}
+                      disabled={
+                        !isCurrentPlayerTurn ||
+                        !selectedCard ||
+                        selectedCard.type !== 'special' ||
+                        selectedMarketCards.length > 0 ||
+                        selectedHandCards.length !== 1 ||
+                        (selectedCard && selectedCard.id === 'cinnamon' && (!gameState.discard_pile_size || gameState.discard_pile_size === 0)) ||
+                        (selectedCard && selectedCard.id === 'chili_pepper' && (!targetPlayer || !targetCard)) ||
+                        (gameState?.first_finisher && targetPlayer === gameState?.first_finisher)
+                      }
+                      data-tooltip={
+                        !isCurrentPlayerTurn
+                          ? "Not your turn"
+                          : selectedMarketCards.length > 0
+                            ? "Can't play special cards while exchanging with market"
+                          : selectedHandCards.length !== 1
+                            ? "Select exactly one special card"
+                          : !selectedCard
+                            ? "Select a special card first"
+                          : selectedCard.type !== 'special'
+                            ? "Selected card is not a special card"
+                          : gameState?.first_finisher && targetPlayer === gameState?.first_finisher
+                            ? "Cannot use special cards against first finisher"
+                          : (selectedCard.id === 'cinnamon' && (!gameState.discard_pile_size || gameState.discard_pile_size === 0))
+                            ? "Cannot play Cinnamon when the discard pile is empty"
+                          : (selectedCard.id === 'chili_pepper' && (!targetPlayer || !targetCard))
+                            ? "Select a card from an opponent's borsht first"
+                            : "Play the selected special card"
+                      }
+                    >
+                      Play Special
+                    </button>
+                    <button
+                      className="borsht-action-button"
+                      onClick={handleExchange}
+                      disabled={
+                        !isCurrentPlayerTurn ||
+                        (selectedMarketCards.length === 0 || selectedHandCards.length === 0) ||
+                        (selectedMarketCards.length > 0 && !isExchangeValid())
+                      }
+                      data-tooltip={
+                        !isCurrentPlayerTurn
+                          ? "Not your turn"
+                          : selectedMarketCards.length === 0 || selectedHandCards.length === 0
+                            ? "Select cards to exchange"
+                          : selectedMarketCards.length > 0 && selectedHandCards.length === 0
+                            ? "Select cards from your hand to exchange"
+                          : selectedMarketCards.length > 1 && selectedHandCards.length > 1
+                            ? "Valid exchanges only many-to-1 or 1-to-many"
+                          : selectedMarketCards.length > 0 && !isExchangeValid()
+                            ? "Your selected cards must be equal to or greater than the market cards' cost"
+                            : "Exchange selected cards"
+                      }
+                    >
+                      Exchange
+                    </button>
+                    {(selectedMarketCards.length > 0 || selectedHandCards.length > 0 || selectedCard) && (
+                      <button
+                        className="borsht-button borsht-action-button"
+                        onClick={handleDeselectAll}
+                        title="Deselect all cards"
+                      >
+                        <span>Deselect All</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                /* Show Popup button when panel is hidden */
+                <button
+                  className="borsht-button borsht-action-button borsht-show-popup-button"
+                  onClick={toggleActionPanel}
+                  title="Show action panel"
+                >
+                  <span>Show Popup</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -1123,7 +1139,7 @@ const Game = ({ roomId, user }) => {
           />
         )}
 
-        {defenseData && (
+        {showActionPanel && defenseData && (
           <SourCreamDefense
             attacker={defenseData.attacker}
             attackCard={defenseData.attackCard}
@@ -1131,6 +1147,7 @@ const Game = ({ roomId, user }) => {
             expiresAt={defenseData.expires_at}
             onDefend={handleDefend}
             onDecline={handleDeclineDefense}
+            hidePopup={toggleActionPanel}
           />
         )}
 
@@ -1157,12 +1174,13 @@ const Game = ({ roomId, user }) => {
           />
         )}
 
-      {cinnamonData && (
+      {showActionPanel && cinnamonData && (
         <CinnamonSelection
           discard_pile={cinnamonData.discard_pile}
           selectCount={cinnamonData.select_count}
           expiresAt={cinnamonData.expires_at}
           onSubmit={handleCinnamonSelection}
+          hidePopup={toggleActionPanel}
           onCancel={() => {
             // Send an empty selection to the server to trigger random selection
             api.getWs().send(JSON.stringify({
@@ -1176,13 +1194,14 @@ const Game = ({ roomId, user }) => {
         />
       )}
 
-      {discardData && (
+      {showActionPanel && discardData && (
           <DiscardSelection
             hand={discardData.hand}
             discardCount={discardData.discard_count}
             expiresAt={discardData.expires_at}
             recipe={discardData.recipe}
             onSubmit={handleDiscardSelection}
+            hidePopup={toggleActionPanel}
             onCancel={() => {
               // Send an empty selection to the server to trigger random selection
               api.getWs().send(JSON.stringify({
@@ -1196,12 +1215,13 @@ const Game = ({ roomId, user }) => {
           />
         )}
 
-      {marketDiscardData && (
+      {showActionPanel && marketDiscardData && (
           <MarketDiscardSelection
             market={marketDiscardData.market}
             discardCount={marketDiscardData.discard_count}
             expiresAt={marketDiscardData.expires_at}
             onSubmit={handleMarketDiscardSelection}
+            hidePopup={toggleActionPanel}
             onCancel={() => {
               // Send an empty selection to the server to trigger random selection
               api.getWs().send(JSON.stringify({
@@ -1215,12 +1235,13 @@ const Game = ({ roomId, user }) => {
           />
         )}
 
-      {oliveOilData && (
+      {showActionPanel && oliveOilData && (
           <OliveOilSelection
             cards={oliveOilData.cards}
             selectCount={oliveOilData.select_count}
             expiresAt={oliveOilData.expires_at}
             onSubmit={handleOliveOilSelection}
+            hidePopup={toggleActionPanel}
             onCancel={() => {
               // Send an empty selection to the server to trigger random selection
               api.getWs().send(JSON.stringify({
@@ -1234,12 +1255,13 @@ const Game = ({ roomId, user }) => {
           />
         )}
 
-      {gingerData && (
+      {showActionPanel && gingerData && (
           <GingerSelection
             market={gingerData.market}
             selectCount={gingerData.select_count}
             expiresAt={gingerData.expires_at}
             onSubmit={handleGingerSelection}
+            hidePopup={toggleActionPanel}
             onCancel={() => {
               // Send an empty selection to the server to trigger random selection
               api.getWs().send(JSON.stringify({
@@ -1253,12 +1275,13 @@ const Game = ({ roomId, user }) => {
           />
         )}
 
-      {redPepperData && (
+      {showActionPanel && redPepperData && (
           <RedPepperDecision
             targetPlayer={redPepperData.targetPlayer}
             targetCard={redPepperData.targetCard}
             playerRecipe={redPepperData.playerRecipe}
             playerBorsht={redPepperData.playerBorsht}
+            hidePopup={toggleActionPanel}
             onSelect={handleRedPepperDecision}
             onCancel={() => {
               setRedPepperData(null);
