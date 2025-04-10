@@ -1967,3 +1967,55 @@
   height: 100%;
   font-size: x-large;
 }
+
+/* BlackPepperDecision Specific Styles */
+.borsht-decision-subtitle {
+  text-align: center;
+  color: #555;
+  margin-bottom: 20px;
+  font-style: italic;
+}
+
+.borsht-player-borshts {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 20px;
+  max-height: 400px;
+}
+
+.borsht-player-borsht-selection {
+  background-color: #fff5e6;
+  border-radius: 8px;
+  padding: 10px;
+  border: 1px solid #e9c46a;
+}
+
+.borsht-player-name {
+  font-weight: bold;
+  color: #264653;
+  margin-bottom: 10px;
+}
+
+.borsht-players-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.borsht-player-summary {
+  background-color: #fff5e6;
+  border-radius: 8px;
+  padding: 15px;
+  border: 1px solid #e9c46a;
+  width: 180px;
+  text-align: center;
+}
+
+.borsht-player-stat {
+  color: #555;
+  font-size: 0.9rem;
+  margin-top: 5px;
+}

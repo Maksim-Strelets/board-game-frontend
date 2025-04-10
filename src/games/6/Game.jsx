@@ -10,6 +10,7 @@ import DiscardSelection from './DiscardSelection';
 import OliveOilSelection from './OliveOilSelection';
 import CinnamonSelection from './CinnamonSelection';
 import RedPepperDecision from './RedPepperDecision';
+import BlackPepperDecision from './BlackPepperDecision';
 import MarketDiscardSelection from './MarketDiscardSelection';
 
 import api from '../../utils/api';
@@ -40,6 +41,7 @@ const Game = ({ roomId, user }) => {
   const [oliveOilData, setOliveOilData] = useState(null);
   const [gingerData, setGingerData] = useState(null);
   const [redPepperData, setRedPepperData] = useState(null);
+  const [blackPepperData, setBlackPepperData] = useState(null);
   const [defenseData, setDefenseData] = useState(null);
   const [showActionPanel, setShowActionPanel] = useState(true);
 
@@ -457,17 +459,29 @@ const Game = ({ roomId, user }) => {
     });
   };
 
-  // Add this function to handle special card effect choices
-    const handleBlackPepperEffect = (effectChoice) => {
-      if (!selectedCard || selectedCard.uid !== 'black_pepper') return;
+    // Handle Black Pepper special card effect choices
+    const handleBlackPepperEffect = (effectChoice, selectedTargets) => {
+      if (!selectedCard || selectedCard.id !== 'black_pepper') return;
 
-      makeMove({
-        action: 'play_special',
-        card_id: selectedCard.uid,
-        effect_choice: effectChoice
-      });
+      if (effectChoice === 'discard' && selectedTargets) {
+        // For discard effect, we need the selected cards from each opponent's borsht
+        makeMove({
+          action: 'play_special',
+          card_id: selectedCard.uid,
+          action_type: effectChoice,
+          target_cards: selectedTargets
+        });
+      } else {
+        // For take effect or when no targets selected
+        makeMove({
+          action: 'play_special',
+          card_id: selectedCard.uid,
+          action_type: effectChoice
+        });
+      }
 
       setPendingRequest(null);
+      setBlackPepperData(null);
     };
 
   // Handle playing a special card
@@ -477,14 +491,15 @@ const Game = ({ roomId, user }) => {
       return;
     }
 
-      // For Black Pepper, show decision popup instead of window.confirm
-      if (selectedCard.effect === 'discard_or_take') {
-        setPendingRequest({
-          type: 'black_pepper_decision'
-        });
-        return;
-      }
-
+    // For Black Pepper, show decision popup
+    if (selectedCard.id === 'black_pepper') {
+      setBlackPepperData({
+        players: gameState.players,
+        currentPlayerId: user.id,
+        firstFinisher: gameState.first_finisher || null
+      });
+      return;
+    }
       // For Red Pepper, check if a target card is selected
       if (selectedCard.id === 'chili_pepper') {
         if (!targetPlayer || !targetCard) {
@@ -1187,29 +1202,6 @@ const Game = ({ roomId, user }) => {
           />
         )}
 
-        {pendingRequest?.type === 'black_pepper_decision' && (
-          <PlayerDecision
-            title="Black Pepper Effect"
-            message="Choose which effect to apply:"
-            options={[
-              {
-                id: 'discard_from_borsht',
-                label: "Discard 1 ingredient from each opponent's borsht",
-                description: "Forces each opponent to discard one ingredient card from their borsht."
-              },
-              {
-                id: 'take_from_hand',
-                label: "Take 1 card from each opponent's hand",
-                description: "You get to take one random card from each opponent's hand."
-              }
-            ]}
-            onSelect={handleBlackPepperEffect}
-            onCancel={() => setPendingRequest(null)}
-            showCancel={true}
-            cancelLabel="Cancel"
-          />
-        )}
-
       {showActionPanel && cinnamonData && (
         <CinnamonSelection
           discard_pile={cinnamonData.discard_pile}
@@ -1324,6 +1316,19 @@ const Game = ({ roomId, user }) => {
               setTargetPlayer(null);
               setTargetCard(null);
             }}
+          />
+        )}
+
+      {showActionPanel && blackPepperData && (
+          <BlackPepperDecision
+            players={blackPepperData.players}
+            currentPlayerId={blackPepperData.currentPlayerId}
+            firstFinisher={blackPepperData.firstFinisher}
+            onSelect={handleBlackPepperEffect}
+            onCancel={() => {
+              setBlackPepperData(null);
+            }}
+            hidePopup={toggleActionPanel}
           />
         )}
 
