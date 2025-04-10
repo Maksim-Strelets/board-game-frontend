@@ -554,6 +554,14 @@ const Game = ({ roomId, user }) => {
     });
   };
 
+    const handleSkipTurn = () => {
+    if (!isCurrentPlayerTurn) return;
+
+    makeMove({
+      action: 'skip'
+    });
+  };
+
   const isExchangeValid = () => {
       if (selectedMarketCards.length === 0) return false;
       if (selectedHandCards.length === 0) return false;
@@ -981,10 +989,20 @@ const Game = ({ roomId, user }) => {
                     <button
                       className="borsht-action-button"
                       onClick={handleAddIngredient}
-                      disabled={!isCurrentPlayerTurn || !selectedCard || selectedCard.type === 'special' || selectedMarketCards.length > 0 || selectedHandCards.length !== 1 || !canAddCardToBorsht(selectedCard)}
+                      disabled={
+                        !isCurrentPlayerTurn ||
+                        gameState?.turn_state !== "normal_turn" ||
+                        !selectedCard ||
+                        selectedCard.type === 'special' ||
+                        selectedMarketCards.length > 0 ||
+                        selectedHandCards.length !== 1 ||
+                        !canAddCardToBorsht(selectedCard)
+                      }
                       data-tooltip={
                         !isCurrentPlayerTurn
                           ? "Not your turn"
+                          : gameState?.turn_state !== "normal_turn"
+                            ? "Can't make move right now"
                           : selectedMarketCards.length > 0
                             ? "Can't add ingredients while exchanging with market"
                           : selectedHandCards.length !== 1
@@ -1006,12 +1024,15 @@ const Game = ({ roomId, user }) => {
                     <button
                       className="borsht-action-button"
                       onClick={handleDrawCards}
-                      disabled={!isCurrentPlayerTurn || selectedMarketCards.length > 0}
+                      disabled={
+                        !isCurrentPlayerTurn ||
+                        gameState?.turn_state !== "normal_turn"
+                      }
                       data-tooltip={
                         !isCurrentPlayerTurn
                           ? "Not your turn"
-                          : selectedMarketCards.length > 0
-                            ? "Can't draw cards while exchanging with market"
+                          : gameState?.turn_state !== "normal_turn"
+                            ? "Can't make move right now"
                             : "Draw 2 cards from the deck"
                       }
                     >
@@ -1022,6 +1043,7 @@ const Game = ({ roomId, user }) => {
                       onClick={handlePlaySpecial}
                       disabled={
                         !isCurrentPlayerTurn ||
+                        gameState?.turn_state !== "normal_turn" ||
                         !selectedCard ||
                         selectedCard.type !== 'special' ||
                         selectedMarketCards.length > 0 ||
@@ -1033,6 +1055,8 @@ const Game = ({ roomId, user }) => {
                       data-tooltip={
                         !isCurrentPlayerTurn
                           ? "Not your turn"
+                          : gameState?.turn_state !== "normal_turn"
+                            ? "Can't make move right now"
                           : selectedMarketCards.length > 0
                             ? "Can't play special cards while exchanging with market"
                           : selectedHandCards.length !== 1
@@ -1057,12 +1081,15 @@ const Game = ({ roomId, user }) => {
                       onClick={handleExchange}
                       disabled={
                         !isCurrentPlayerTurn ||
+                        (gameState?.turn_state !== "normal_turn" && gameState?.turn_state !== "waiting_for_exchange") ||
                         (selectedMarketCards.length === 0 || selectedHandCards.length === 0) ||
                         (selectedMarketCards.length > 0 && !isExchangeValid())
                       }
                       data-tooltip={
                         !isCurrentPlayerTurn
                           ? "Not your turn"
+                          : (gameState?.turn_state !== "normal_turn" && gameState?.turn_state !== "waiting_for_exchange")
+                            ? "Can't make move right now"
                           : selectedMarketCards.length === 0 || selectedHandCards.length === 0
                             ? "Select cards to exchange"
                           : selectedMarketCards.length > 0 && selectedHandCards.length === 0
@@ -1083,6 +1110,15 @@ const Game = ({ roomId, user }) => {
                         title="Deselect all cards"
                       >
                         <span>Deselect All</span>
+                      </button>
+                    )}
+                    {(gameState?.turn_state === "waiting_for_exchange") && (
+                      <button
+                        className="borsht-action-button"
+                        onClick={handleSkipTurn}
+                        data-tooltip="Skip ingredients exchange"
+                      >
+                        Skip exchange
                       </button>
                     )}
                   </div>
@@ -1323,6 +1359,13 @@ const Game = ({ roomId, user }) => {
         <div className={`borsht-finisher-notification ${gameState.first_finisher === user.id ? 'you' : ''}`}>
           {gameState.first_finisher === user.id ? 'You completed your recipe first!' : `Player ${gameState.first_finisher} completed their recipe!`}
           <div className="borsht-finisher-subtitle">Final round in progress</div>
+        </div>
+      )}
+
+      {/* Paprika exchange notification */}
+      {gameState.turn_state === "waiting_for_exchange" && (
+        <div className={`borsht-game-message`}>
+          Make an exchange with market or skip
         </div>
       )}
     </div>
