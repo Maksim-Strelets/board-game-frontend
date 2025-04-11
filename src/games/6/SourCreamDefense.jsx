@@ -22,6 +22,7 @@ const SourCreamDefense = ({
         setTimeRemaining(prev => {
           if (prev <= 1) {
             clearInterval(interval);
+            onDecline()
             return 0;
           }
           return prev - 1;

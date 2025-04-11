@@ -16,7 +16,6 @@ const OliveOilSelection = ({ cards, selectCount, onSubmit, onCancel, expiresAt, 
         setTimeRemaining(prev => {
           if (prev <= 1) {
             clearInterval(interval);
-            // Auto submit on timeout
             onCancel();
             return 0;
           }

@@ -15,7 +15,6 @@ const MarketDiscardSelection = ({ market, discardCount, expiresAt, onSubmit, onC
       setTimer(prev => {
         if (prev <= 1) {
           clearInterval(interval);
-          // Auto-submit when time runs out
           onCancel();
           return 0;
         }

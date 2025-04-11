@@ -25,6 +25,7 @@ const CinnamonSelection = ({
         setTimeRemaining(prev => {
           if (prev <= 1) {
             clearInterval(interval);
+            onCancel();
             return 0;
           }
           return prev - 1;

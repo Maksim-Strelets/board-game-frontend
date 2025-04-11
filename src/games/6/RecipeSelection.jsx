@@ -35,6 +35,16 @@ const RecipeSelection = ({ recipeOptions, onSelectRecipe, timeRemaining }) => {
         Time remaining: {timeRemaining} seconds
       </div>
 
+      <div className="borsht-recipe-selection-actions">
+        <button
+          className="borsht-button"
+          onClick={handleSubmit}
+          disabled={!selectedRecipe}
+        >
+          Confirm Selection
+        </button>
+      </div>
+
       <div className="borsht-recipe-options">
         {recipeOptions.map((recipe) => (
           <div
@@ -53,15 +63,6 @@ const RecipeSelection = ({ recipeOptions, onSelectRecipe, timeRemaining }) => {
         ))}
       </div>
 
-      <div className="borsht-recipe-selection-actions">
-        <button
-          className="borsht-button"
-          onClick={handleSubmit}
-          disabled={!selectedRecipe}
-        >
-          Confirm Selection
-        </button>
-      </div>
     </DecisionPopup>
   );
 };

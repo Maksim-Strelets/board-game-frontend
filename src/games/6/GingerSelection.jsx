@@ -25,6 +25,7 @@ const GingerSelection = ({
         setTimeRemaining(prev => {
           if (prev <= 1) {
             clearInterval(interval);
+            onSubmit(selectedCards);
             return 0;
           }
           return prev - 1;

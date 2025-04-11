@@ -834,7 +834,7 @@ const Game = ({ roomId, user }) => {
                   {isZoomed === card.uid && (
                     <div className="borsht-card-tooltip">
                       <strong>{card.name || card.id}</strong>
-                      {card.type === 'special' || card.effect_description && <p>{card.effect_description || card.effect}</p>}
+                      {card.effect_description && <p>{card.effect_description || card.effect}</p>}
                     </div>
                   )}
                 </div>
@@ -1061,6 +1061,7 @@ const Game = ({ roomId, user }) => {
                         gameState?.turn_state !== "normal_turn" ||
                         !selectedCard ||
                         selectedCard.type !== 'special' ||
+                        selectedCard.id === 'sour_cream' ||
                         selectedMarketCards.length > 0 ||
                         selectedHandCards.length !== 1 ||
                         (selectedCard && selectedCard.id === 'cinnamon' && (!gameState.discard_pile_size || gameState.discard_pile_size === 0)) ||
@@ -1080,6 +1081,8 @@ const Game = ({ roomId, user }) => {
                             ? "Select a special card first"
                           : selectedCard.type !== 'special'
                             ? "Selected card is not a special card"
+                          : selectedCard.id === 'sour_cream'
+                            ? "Can't play this card"
                           : gameState?.first_finisher && targetPlayer === gameState?.first_finisher
                             ? "Cannot use special cards against first finisher"
                           : (selectedCard.id === 'cinnamon' && (!gameState.discard_pile_size || gameState.discard_pile_size === 0))
