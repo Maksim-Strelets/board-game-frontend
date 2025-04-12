@@ -18,7 +18,7 @@ const GameRoomCard: React.FC<{
           ? 'bg-gray-300 cursor-not-allowed'
           : 'bg-green-500 text-white hover:bg-green-600'
       }`}
-      disabled={room.currentPlayers >= room.maxPlayers}
+      disabled={room.currentPlayers >= room.maxPlayers}  // TODO: add check for player in room
       onClick={() => onJoin(room.id)}
     >
       Join Room

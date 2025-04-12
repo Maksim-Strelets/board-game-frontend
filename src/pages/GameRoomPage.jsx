@@ -33,9 +33,6 @@ const RoomPage: React.FC = () => {
   const [GameComponent, setGameComponent] = useState(null);
   const [gameLoadError, setGameLoadError] = useState(null);
 
-  const [gameStats, setGameStats] = useState(null);
-  const [showStatsPopup, setShowStatsPopup] = useState(false);
-
   // Effect to handle auto-scrolling
   useEffect(() => {
     const chatContainer = chatMessagesRef.current;
@@ -179,12 +176,6 @@ const RoomPage: React.FC = () => {
           setRoomStatus(data.status);
         });
 
-        api.getWs().on('game_ended', (data) => {
-          setRoomStatus('ended');
-          setGameStats(data.stats);
-          setShowStatsPopup(true);
-        });
-
       } catch (error) {
         console.error('Error connecting to game:', error);
 //         setError('Failed to connect to the game server.');
@@ -201,10 +192,6 @@ const RoomPage: React.FC = () => {
       };
     };
   }, [gameId, roomId, isRoomInitialized]);
-
-  const closeStatsPopup = () => {
-    setShowStatsPopup(false);
-  };
 
   const sendChatMessage = () => {
     if (api.getWs().socket && inputMessage.trim()) {
@@ -426,71 +413,6 @@ const RoomPage: React.FC = () => {
               </div>
           </div>
         </div>
-        {/* Game Stats Popup */}
-        {showStatsPopup && gameStats && (
-          <div className="stats-popup-overlay">
-            <div className="stats-popup">
-              <div className="stats-popup-header">
-                <h2>Game Results</h2>
-                <button className="stats-close-btn" onClick={closeStatsPopup}>×</button>
-              </div>
-              <div className="stats-popup-body">
-                <h3>Winner: {gameStats.winner?.user_data.username || 'Draw'}</h3>
-
-                <div className="stats-table">
-                  <div className="stats-table-header">
-                    <div className="stats-cell">Player</div>
-                    <div className="stats-cell">Score</div>
-                    <div className="stats-cell">Result</div>
-                  </div>
-                  {gameStats.players.map((player) => (
-                    <div
-                      key={player.user_id}
-                      className={`stats-table-row ${player.is_winner ? 'stats-winner' : ''}`}
-                    >
-                      <div className="stats-cell">{player.username}</div>
-                      <div className="stats-cell">{player.score}</div>
-                      <div className="stats-cell">
-                        {player.is_winner ? '🏆 Winner' : ''}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="stats-footer">
-                  <p>Game duration: {
-                    (() => {
-                      const totalSeconds = gameStats.duration;
-                      const hours = Math.floor(totalSeconds / 3600);
-                      const minutes = Math.floor((totalSeconds % 3600) / 60);
-                      const seconds = totalSeconds % 60;
-
-                      let durationText = '';
-
-                      if (hours > 0) {
-                        durationText += `${hours} Hours `;
-                      }
-
-                      if (minutes > 0 || hours > 0) {
-                        durationText += `${minutes} Minutes `;
-                      }
-
-                      durationText += `${seconds} Seconds`;
-
-                      return durationText;
-                    })()
-                  }</p>
-                  <button
-                    className="btn btn-primary"
-                    onClick={closeStatsPopup}
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     );
 };

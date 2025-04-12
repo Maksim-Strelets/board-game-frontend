@@ -13,6 +13,9 @@ import RedPepperDecision from './RedPepperDecision';
 import BlackPepperDecision from './BlackPepperDecision';
 import MarketDiscardSelection from './MarketDiscardSelection';
 
+import GameStats from './GameStats';
+import './GameStats.css';
+
 import api from '../../utils/api';
 import './Game.css';
 
@@ -44,6 +47,9 @@ const Game = ({ roomId, user }) => {
   const [blackPepperData, setBlackPepperData] = useState(null);
   const [defenseData, setDefenseData] = useState(null);
   const [showActionPanel, setShowActionPanel] = useState(true);
+
+  const [gameStats, setGameStats] = useState(null);
+  const [showGameStats, setShowGameStats] = useState(false);
 
   // References for card containers
   const handContainerRef = useRef(null);
@@ -158,7 +164,11 @@ const Game = ({ roomId, user }) => {
             expires_at: data.expires_at,
           });
 
+        } else if (data.type === 'game_ended') {
+          setGameStats(data.state);
+          setShowGameStats(true);
         }
+
       } catch (err) {
         console.error('Error processing websocket message:', err);
       }
@@ -639,6 +649,21 @@ const Game = ({ roomId, user }) => {
     }
   };
 
+  const calculateTotalPoints = (playerData) => {
+  // Check if the object has the borsht property and it's an array
+  if (!playerData.borsht || !Array.isArray(playerData.borsht)) {
+    return 0;
+  }
+
+  // Use reduce to sum up all the points from the cards
+  const totalPoints = playerData.borsht.reduce((sum, card) => {
+    // Add the card's points to the sum if it exists
+    return sum + (card.points || 0);
+  }, 0);
+
+  return totalPoints;
+}
+
   const canAddCardToBorsht = (card) => {
       if (!card) return false;
 
@@ -741,12 +766,6 @@ const Game = ({ roomId, user }) => {
       {/* Game header */}
       <div className="borsht-header">
         <h2>{isCurrentPlayerTurn ? "Your turn" : `${gameState.players[gameState.current_player].username}'s turn`}</h2>
-        <div className="borsht-status">
-          <span>Cards in deck: {gameState.cards_in_deck || 0}</span>
-          <span>Market: {market.length} / {gameState.market_limit || 8}</span>
-          {gameState.game_ending && <span className="borsht-final-round">Final Round!</span>}
-          {gameState.is_game_over && <span>Winner: {gameState.winner === user.id ? 'You!' : `Player ${gameState.winner}`}</span>}
-        </div>
         <div className="borsht-actions">
           <button
             onClick={() => setShowRecipe(!showRecipe)}
@@ -773,10 +792,11 @@ const Game = ({ roomId, user }) => {
               <div className="borsht-player-header">
                 <div className="borsht-player-name">
                   <CircleUser className="borsht-player-icon" />
-                  <span>Player {playerId}</span>
+                  <span>{playerData.username}</span>
                 </div>
                 <div className="borsht-player-stats">
                   <span>Cards: {playerData.hand_size || 0}</span>
+                  <span> Points: {calculateTotalPoints(playerData)} </span>
                 </div>
               </div>
               <div className="borsht-borsht-container">
@@ -1338,33 +1358,6 @@ const Game = ({ roomId, user }) => {
           />
         )}
 
-      {/* Game over popup */}
-      {gameState.is_game_over && (
-        <div className="borsht-game-over">
-          <div className="borsht-game-over-modal">
-            <div className="borsht-winner">
-              {gameState.winner === user.id ? 'You win!' : `Player ${gameState.winner} wins!`}
-            </div>
-            <div className="borsht-scores">
-              {gameState.scores && Object.entries(gameState.scores).sort((a, b) => b[1] - a[1]).map(([playerId, score]) => (
-                <div key={playerId} className={`borsht-score-item ${gameState.winner === parseInt(playerId) ? 'winner' : ''}`}>
-                  <div className="borsht-score-player">
-                    {parseInt(playerId) === user.id ? 'You' : `Player ${playerId}`}
-                  </div>
-                  <div className="borsht-score-value">{score} points</div>
-                </div>
-              ))}
-            </div>
-            <button
-              className="borsht-button"
-              onClick={() => window.location.reload()}
-            >
-              Play Again
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* First finisher notification */}
       {gameState.first_finisher && !gameState.is_game_over && (
         <div className={`borsht-finisher-notification ${gameState.first_finisher.user_id === user.id ? 'you' : ''}`}>
@@ -1379,6 +1372,22 @@ const Game = ({ roomId, user }) => {
           Make an exchange with market or skip
         </div>
       )}
+
+      {/* Defense waiting notification */}
+      {gameState.turn_state === "waiting_for_defense" && (
+        <div className={`borsht-game-message`}>
+          Waiting for target player(s) defense decision
+        </div>
+      )}
+
+      {/* Game over popup */}
+      {showActionPanel && showGameStats && gameStats && (
+          <GameStats
+            gameStats={gameStats}
+            onHide={toggleActionPanel}
+            onLeaveGame={() => window.location.href = '/'}
+          />
+        )}
     </div>
   );
 };
