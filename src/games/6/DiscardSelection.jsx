@@ -64,17 +64,6 @@ const DiscardSelection = ({
         </div>
 
         <div className="borsht-decision-popup-content">
-          {recipe && (
-            <div className="borsht-discard-recipe-container">
-              <div className="borsht-discard-recipe">
-                <div
-                  className="borsht-discard-recipe-card"
-                  style={{backgroundImage: `url('/games/borscht/recipes/${recipe.id || 'default'}_full.png')`}}
-                >
-                </div>
-              </div>
-            </div>
-          )}
           <div className="borsht-discard-selection-cards">
             {hand.map((card) => (
               <div

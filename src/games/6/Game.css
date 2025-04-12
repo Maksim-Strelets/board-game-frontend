@@ -514,7 +514,7 @@
 
   .borsht-card {
     width: 70px;
-    height: 98px;
+    height: 105px;
   }
 
   .borsht-hand-cards {
@@ -1370,7 +1370,6 @@
   border-radius: 8px;
   min-height: 150px;
   max-height: 350px;
-  overflow-y: auto;
 }
 
 .borsht-discard-selection-cards::-webkit-scrollbar {

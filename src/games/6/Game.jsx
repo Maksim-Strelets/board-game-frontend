@@ -158,12 +158,6 @@ const Game = ({ roomId, user }) => {
             expires_at: data.expires_at,
           });
 
-        } else if (data.type === 'recipe_completed') {
-          // Someone completed their recipe
-          const message = data.player_id === user.id
-            ? "You completed your recipe first!"
-            : `Player ${data.player_id} completed their recipe!`;
-          alert(message + " Everyone gets one more turn.");
         }
       } catch (err) {
         console.error('Error processing websocket message:', err);
@@ -205,7 +199,16 @@ const Game = ({ roomId, user }) => {
 
       // If already selected, remove it from selection
       if (selectedMarketCards.some(c => c.uid === card.uid)) {
-        setSelectedMarketCards(prev => prev.filter(c => c.uid !== card.uid));
+        const newSelectedMarketCards = selectedMarketCards.filter(c => c.uid !== card.uid);
+        if (newSelectedMarketCards.length === 0 && selectedHandCards.length === 1) {
+          setSelectedCard(selectedHandCards[0]);
+          if (selectedHandCards[0].type === 'special') {
+            setSelectedAction('play_special');
+          } else {
+            setSelectedAction('add_ingredient');
+          }
+        }
+        setSelectedMarketCards(newSelectedMarketCards);
       } else {
         // Otherwise add it to selection
         setSelectedMarketCards(prev => [...prev, card]);
@@ -514,7 +517,7 @@ const Game = ({ roomId, user }) => {
           return;
         }
 
-        if (targetPlayer === gameState?.first_finisher) {
+        if (targetPlayer === gameState?.first_finisher?.user_id) {
           alert('Cannot use pepper on this player');
           return;
         }
@@ -1066,7 +1069,7 @@ const Game = ({ roomId, user }) => {
                         selectedHandCards.length !== 1 ||
                         (selectedCard && selectedCard.id === 'cinnamon' && (!gameState.discard_pile_size || gameState.discard_pile_size === 0)) ||
                         (selectedCard && selectedCard.id === 'chili_pepper' && (!targetPlayer || !targetCard)) ||
-                        (gameState?.first_finisher && targetPlayer === gameState?.first_finisher)
+                        (gameState?.first_finisher && targetPlayer === gameState?.first_finisher?.user_id)
                       }
                       data-tooltip={
                         !isCurrentPlayerTurn
@@ -1083,7 +1086,7 @@ const Game = ({ roomId, user }) => {
                             ? "Selected card is not a special card"
                           : selectedCard.id === 'sour_cream'
                             ? "Can't play this card"
-                          : gameState?.first_finisher && targetPlayer === gameState?.first_finisher
+                          : gameState?.first_finisher && targetPlayer === gameState?.first_finisher?.user_id
                             ? "Cannot use special cards against first finisher"
                           : (selectedCard.id === 'cinnamon' && (!gameState.discard_pile_size || gameState.discard_pile_size === 0))
                             ? "Cannot play Cinnamon when the discard pile is empty"
@@ -1364,8 +1367,8 @@ const Game = ({ roomId, user }) => {
 
       {/* First finisher notification */}
       {gameState.first_finisher && !gameState.is_game_over && (
-        <div className={`borsht-finisher-notification ${gameState.first_finisher === user.id ? 'you' : ''}`}>
-          {gameState.first_finisher === user.id ? 'You completed your recipe first!' : `Player ${gameState.first_finisher} completed their recipe!`}
+        <div className={`borsht-finisher-notification ${gameState.first_finisher.user_id === user.id ? 'you' : ''}`}>
+          {gameState.first_finisher.user_id === user.id ? 'You completed your recipe first!' : `${gameState.first_finisher.user_data.username} completed their recipe!`}
           <div className="borsht-finisher-subtitle">Final round in progress</div>
         </div>
       )}
