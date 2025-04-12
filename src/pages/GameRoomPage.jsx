@@ -31,6 +31,7 @@ const RoomPage: React.FC = () => {
 
   // Add this state for the dynamically loaded game component
   const [GameComponent, setGameComponent] = useState(null);
+  const [GameMessagesComponent, setGameMessagesComponent] = useState(null);
   const [gameLoadError, setGameLoadError] = useState(null);
 
   // Effect to handle auto-scrolling
@@ -71,7 +72,9 @@ const RoomPage: React.FC = () => {
           try {
             // Dynamic import of the game component based on gameId
             const GameModule = await import(`./../games/${gameId}/Game.jsx`);
+            const GameMessagesModule = await import(`./../games/${gameId}/GameMessages.jsx`);
             setGameComponent(() => GameModule.default);
+            setGameMessagesComponent(() => GameMessagesModule.default);
             setGameLoadError(null);
           } catch (err) {
             console.error('Failed to load game component:', err);
@@ -411,6 +414,11 @@ const RoomPage: React.FC = () => {
                   </button>
                 </div>
               </div>
+              {/* Game messages log */}
+              {(GameMessagesComponent && <GameMessagesComponent
+                websocket={api.getWs()}
+                players={{...Object.fromEntries(roomUsers.map(roomUser => [roomUser.user_id, roomUser])), currentUserId: user.id}}
+              />)}
           </div>
         </div>
       </div>
