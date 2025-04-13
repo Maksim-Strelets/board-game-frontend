@@ -24,6 +24,7 @@ const GameMessages = ({ websocket, players }) => {
         const data = JSON.parse(event.data);
         let message = '';
         const timestamp = new Date().toLocaleTimeString();
+        const CardNames = '';
 
         // Create human-readable messages based on message type
         switch (data.type) {
@@ -63,14 +64,16 @@ const GameMessages = ({ websocket, players }) => {
             break;
 
           case 'cards_from_discard_selected':
+            CardNames = data.cards?.map(card => card[1].name || card[1].id).join(', ') || 'some cards';
             const discardPlayer = data.player.user_id === players.currentUserId
               ? 'You'
               : players[data.player.user_id]?.user_data.username || `Player ${data.player.user_id}`;
-            message = `${discardPlayer} took ${data.cards?.length || 'some'} card${data.cards?.length !== 1 ? 's' : ''} from the discard pile`;
+            message = `${discardPlayer} took ${CardNames} from the discard pile`;
             break;
 
           case 'market_cards_taken':
-            message = `${data.cards?.length || 'Some'} card${data.cards?.length !== 1 ? 's' : ''} taken from the market`;
+            CardNames = data.cards?.map(card => card[1].name || card[1].id).join(', ') || 'some cards';
+            message = `${CardNames} taken from the market`;
             break;
 
           case 'special_effect':
@@ -126,18 +129,22 @@ const GameMessages = ({ websocket, players }) => {
             break;
 
           case 'cards_from_market_discarded':
-            message = `${data.cards?.length || 'Some'} card${data.cards?.length !== 1 ? 's' : ''} discarded from market`;
+            CardNames = data.cards?.map(card => card[1].name || card[1].id).join(', ') || 'some cards';
+            message = `${CardNames} discarded from market`;
             break;
 
           case 'market_cards_added':
-            message = `${data.cards?.length || 'Some'} new card${data.cards?.length !== 1 ? 's' : ''} added to market`;
+            CardNames = data.cards?.map(card => card[1].name || card[1].id).join(', ') || 'some cards';
+            message = `${CardNames} added to market`;
             break;
 
           case 'ingredients_exchanged':
+            const HandCardNames = data.hand_cards?.map(card => card[1].name || card[1].id).join(', ') || 'some cards';
+            const MarketCardNames = data.market_cards?.map(card => card[1].name || card[1].id).join(', ') || 'some cards';
             const exchangingPlayer = data.player.user_id === players.currentUserId
               ? 'You'
               : players[data.player.user_id]?.user_data.username || `Player ${data.player.user_id}`;
-            message = `${exchangingPlayer} exchanged ${data.hand_cards?.length || 'some'} hand card${data.hand_cards?.length !== 1 ? 's' : ''} for ${data.market_cards?.length || 'some'} market card${data.market_cards?.length !== 1 ? 's' : ''}`;
+            message = `${exchangingPlayer} exchanged ${HandCardNames} from hand for ${MarketCardNames} from market`;
             break;
 
           default:
