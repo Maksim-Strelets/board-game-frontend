@@ -146,13 +146,6 @@ const GameBoard = () => {
 
     const connectAndSetupGame = async () => {
       try {
-        // Connect to the game WebSocket
-        if (!api.getWs().socket) {
-          await api.getWs().connect(`/game/${gameId}/room/${roomId}`, {
-            params: { user_id: user.id }
-          });
-        }
-
         // Set up event listeners
         api.getWs().on('game_state', (data) => {
           if (gameRef.current) {
@@ -185,6 +178,13 @@ const GameBoard = () => {
         api.getWs().on('reconnect-failed', () => {
           setError('Failed to reconnect to the game server.');
         });
+
+        // Connect to the game WebSocket
+        if (!api.getWs().socket) {
+          await api.getWs().connect(`/game/${gameId}/room/${roomId}`, {
+            params: { user_id: user.id }
+          });
+        }
 
         // Request current game state
         api.getWs().send({

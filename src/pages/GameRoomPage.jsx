@@ -130,12 +130,6 @@ const RoomPage: React.FC = () => {
 
     const connectAndSetupGame = async () => {
       try {
-        if (!api.getWs().socket) {
-          await api.getWs().connect(`/game/${gameId}/room/${roomId}`, {
-                  params: { user_id: user.id }
-                });
-        }
-
         api.getWs().on('chat', (data) => {
           // Ensure we don't add duplicate messages
           setChatMessages(prev => {
@@ -178,6 +172,12 @@ const RoomPage: React.FC = () => {
         api.getWs().on('room_status_changed', (data) => {
           setRoomStatus(data.status);
         });
+
+        if (!api.getWs().socket) {
+          await api.getWs().connect(`/game/${gameId}/room/${roomId}`, {
+                  params: { user_id: user.id }
+                });
+        }
 
       } catch (error) {
         console.error('Error connecting to game:', error);

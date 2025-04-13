@@ -4,7 +4,7 @@ import './GameMessages.css'
 const GameMessages = ({ websocket, players }) => {
   const [messages, setMessages] = useState([]);
   const messagesEndRef = useRef(null);
-  const maxMessages = 20; // Maximum number of messages to display
+  const maxMessages = 50; // Maximum number of messages to display
 
   // Auto-scroll to bottom of messages
   const scrollToBottom = () => {
@@ -162,7 +162,9 @@ const GameMessages = ({ websocket, players }) => {
 
     // Clean up
     return () => {
-      websocket.socket.removeEventListener('message', handleMessage);
+      if (websocket && websocket.socket) {
+        websocket.socket.removeEventListener('message', handleMessage);
+      }
     };
   }, [websocket, players]);
 

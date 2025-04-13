@@ -63,6 +63,9 @@ const Game = ({ roomId, user }) => {
         await api.getWs().send(JSON.stringify({
           type: 'get_game_state'
         }));
+        await api.getWs().send(JSON.stringify({
+          type: 'resend_pending_data'
+        }));
       } catch (err) {
         console.error('Error fetching game state:', err);
         setError('Failed to connect to the game');
@@ -165,7 +168,7 @@ const Game = ({ roomId, user }) => {
           });
 
         } else if (data.type === 'game_ended') {
-          setGameStats(data.state);
+          setGameStats(data.stats);
           setShowGameStats(true);
         }
 
@@ -649,14 +652,9 @@ const Game = ({ roomId, user }) => {
     }
   };
 
-  const calculateTotalPoints = (playerData) => {
-  // Check if the object has the borsht property and it's an array
-  if (!playerData.borsht || !Array.isArray(playerData.borsht)) {
-    return 0;
-  }
-
+  const calculateTotalPoints = (borsht) => {
   // Use reduce to sum up all the points from the cards
-  const totalPoints = playerData.borsht.reduce((sum, card) => {
+  const totalPoints = borsht.reduce((sum, card) => {
     // Add the card's points to the sum if it exists
     return sum + (card.points || 0);
   }, 0);
@@ -796,7 +794,7 @@ const Game = ({ roomId, user }) => {
                 </div>
                 <div className="borsht-player-stats">
                   <span>Cards: {playerData.hand_size || 0}</span>
-                  <span> Points: {calculateTotalPoints(playerData)} </span>
+                  <span> Points: {calculateTotalPoints(playerData?.borsht)} </span>
                 </div>
               </div>
               <div className="borsht-borsht-container">
@@ -934,7 +932,7 @@ const Game = ({ roomId, user }) => {
 
                 {/* Player's borsht */}
                 <div className="borsht-pot-container">
-                  <h3 className="borsht-section-title">Your Borsht</h3>
+                  <h3 className="borsht-section-title">Your Borsht (Points: {calculateTotalPoints(borshtCards)})</h3>
                   <div className="borsht-pot">
                     {borshtCards.map((card) => (
                       <div
@@ -1385,7 +1383,7 @@ const Game = ({ roomId, user }) => {
           <GameStats
             gameStats={gameStats}
             onHide={toggleActionPanel}
-            onLeaveGame={() => window.location.href = '/'}
+            onLeaveGame={() => window.location.href = '/games/6'}
           />
         )}
     </div>

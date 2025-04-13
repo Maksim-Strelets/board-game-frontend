@@ -13,7 +13,7 @@ const BlackPepperDecision = ({
 
   // Filter out current player and first finisher (if any)
   const targetPlayers = Object.entries(players || {}).filter(([playerId, _]) => {
-    return parseInt(playerId) !== currentPlayerId && parseInt(playerId) !== firstFinisher.user_id;
+    return parseInt(playerId) !== currentPlayerId && parseInt(playerId) !== firstFinisher?.user_id;
   });
 
   const handleCardSelect = (playerId, cardUid) => {
