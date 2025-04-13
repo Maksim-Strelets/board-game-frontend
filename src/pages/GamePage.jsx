@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Plus, ArrowLeft } from 'lucide-react';
 import CreateRoomModal from './../components/games/gamelist/CreateRoomModal';
@@ -15,6 +15,9 @@ const GameRoomsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isCreateRoomDialogOpen, setIsCreateRoomDialogOpen] = useState(false);
+
+  // Use a ref for the websocket to persist across renders
+  const websocketRef = useRef(null);
 
   // Fetch game details
   useEffect(() => {
@@ -33,36 +36,99 @@ const GameRoomsPage = () => {
     fetchGameDetails();
   }, [gameId]);
 
-  // Fetch game rooms when the game is loaded
+  const fetchGameRooms = async () => {
+    if (!selectedGame) return;
+
+    try {
+      const data = await api.get(`/board-games/${selectedGame.id}/rooms`);
+
+      // Transform rooms to match the existing UI structure
+      const transformedRooms = data.map(room => ({
+        id: room.id.toString(),
+        gameId: room.game_id.toString(),
+        name: room.name,
+        creator: 'Unknown', // Backend doesn't provide creator info
+        currentPlayers: room.players ? room.players.length : 0,
+        maxPlayers: room.max_players,
+        status: room.status
+      }));
+
+      setGameRooms(transformedRooms);
+    } catch (err) {
+      console.error('Error fetching game rooms:', err);
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+    }
+  };
+
+  // Fetch initial game rooms
   useEffect(() => {
-    const fetchGameRooms = async () => {
-      if (!selectedGame) return;
-
-      try {
-        const data = await api.get(`/board-games/${selectedGame.id}/rooms`);
-
-        // Transform rooms to match the existing UI structure
-        const transformedRooms = data.map(room => ({
-          id: room.id.toString(),
-          gameId: room.game_id.toString(),
-          name: room.name,
-          creator: 'Unknown', // Backend doesn't provide creator info
-          currentPlayers: room.players ? room.players.length : 0,
-          maxPlayers: room.max_players, // Using game's max players
-          status: room.status // Assuming default status
-        }));
-
-        setGameRooms(transformedRooms);
-      } catch (err) {
-        console.error('Error fetching game rooms:', err);
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
-      }
-    };
-
     if (selectedGame) {
       fetchGameRooms();
     }
   }, [selectedGame]);
+
+  // WebSocket connection and cleanup
+  useEffect(() => {
+    if (!selectedGame || !user?.id) return;
+
+    // Only create a new WebSocket if we don't have one yet
+    if (!websocketRef.current) {
+      console.log('Creating new WebSocket connection');
+      websocketRef.current = api.newWs();
+    }
+
+    const ws = websocketRef.current;
+
+    // Function to handle room updates
+    const handleRoomUpdate = (data) => {
+      console.log('Room list update received:', data);
+      const transformedRooms = data.rooms.map(room => ({
+        id: room.id.toString(),
+        gameId: room.game_id.toString(),
+        name: room.name,
+        creator: 'Unknown',
+        currentPlayers: room.players ? room.players.length : 0,
+        maxPlayers: room.max_players,
+        status: room.status
+      }));
+
+      setGameRooms(transformedRooms);
+    };
+
+    // Add event listener
+    ws.on('room_list_update', handleRoomUpdate);
+
+    // Connect to the WebSocket
+    const connectWebSocket = async () => {
+      try {
+        console.log('Connecting to WebSocket...');
+        await ws.connect(`/game/${gameId}/`, {
+          params: { user_id: user.id }
+        });
+        console.log('WebSocket connected successfully');
+      } catch (err) {
+        console.error('WebSocket connection error:', err);
+        setError(`WebSocket connection failed: ${err.message}`);
+      }
+    };
+
+    connectWebSocket();
+
+    // Cleanup function
+    return () => {
+      console.log('Cleaning up WebSocket connection');
+      // Remove the event listener to prevent duplicates
+      ws.off('room_list_update', handleRoomUpdate);
+
+      // Disconnect the WebSocket
+      if (ws.socket && ws.socket.readyState === WebSocket.OPEN) {
+        ws.disconnect();
+      }
+
+      // Clear the ref on unmount
+      websocketRef.current = null;
+    };
+  }, [selectedGame, gameId, user?.id]);
 
   // Create Room Handler
   const handleCreateRoom = async (roomName, maxPlayers) => {
@@ -70,23 +136,23 @@ const GameRoomsPage = () => {
 
     try {
       const newRoom = await api.post(`/board-games/${selectedGame.id}/rooms`, {
-          name: roomName || `${selectedGame.name} Room`,
-          game_id: selectedGame.id,
-          max_players: maxPlayers
-        });
+        name: roomName || `${selectedGame.name} Room`,
+        game_id: selectedGame.id,
+        max_players: maxPlayers
+      });
 
-      // Transform room to match existing UI structure
+      // The room list will be updated automatically via WebSocket
+      // but we can also add it optimistically
       const transformedRoom = {
         id: newRoom.id.toString(),
         gameId: newRoom.game_id.toString(),
         name: newRoom.name,
-        creator: 'CurrentUser', // Would come from auth context
+        creator: 'CurrentUser',
         currentPlayers: newRoom.players ? newRoom.players.length : 0,
         maxPlayers: newRoom.max_players,
         status: newRoom.status
       };
 
-      // Add room and close dialog
       setGameRooms(prev => [...prev, transformedRoom]);
       setIsCreateRoomDialogOpen(false);
     } catch (err) {
@@ -100,6 +166,12 @@ const GameRoomsPage = () => {
     if (!selectedGame) return;
 
     try {
+      // Clean up the websocket before navigating
+      if (websocketRef.current) {
+        websocketRef.current.disconnect();
+        websocketRef.current = null;
+      }
+
       // Redirect to the room page
       navigate(`/game/${selectedGame.id}/room/${roomId}`);
     } catch (err) {

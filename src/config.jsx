@@ -1,8 +1,8 @@
 // src/config.js
 const config = {
   development: {
-    apiUrl: 'http://10.200.37.126:8000',
-    wsUrl: 'ws://10.200.37.126:8000/ws'
+    apiUrl: 'http://10.200.39.74:8000',
+    wsUrl: 'ws://10.200.39.74:8000/ws'
   },
   production: {
     apiUrl: 'https://your-production-api.com',

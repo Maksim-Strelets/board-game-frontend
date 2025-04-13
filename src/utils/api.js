@@ -265,6 +265,10 @@ const getWsManager = () => {
   return wsManagerInstance;
 };
 
+const newWsManager = () => {
+  return new WebSocketManager()
+}
+
 // Export convenience methods for different HTTP methods
 export const api = {
   get: (endpoint, options = {}) =>
@@ -292,6 +296,7 @@ export const api = {
 
   // WebSocket manager
   getWs: () => getWsManager(),
+  newWs: () => newWsManager(),
 };
 
 export default api;
