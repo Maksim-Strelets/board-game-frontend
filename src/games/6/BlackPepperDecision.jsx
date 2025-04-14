@@ -10,6 +10,7 @@ const BlackPepperDecision = ({
 }) => {
   const [effectChoice, setEffectChoice] = useState(null);
   const [selectedCards, setSelectedCards] = useState({});
+  const [isHidden, setIsHidden] = useState(false);
 
   // Filter out current player and first finisher (if any)
   const targetPlayers = Object.entries(players || {}).filter(([playerId, _]) => {
@@ -82,7 +83,7 @@ const BlackPepperDecision = ({
             {targetPlayers.length === 0 ? (
               <div className="borsht-selection-message">No eligible players to target</div>
             ) : (
-              <div className="borsht-player-borshts">
+              <div className="borsht-player-borshts scrollable-container">
                 {targetPlayers.map(([playerId, playerData]) => (
                   <div key={playerId} className="borsht-player-borsht-selection">
                     <div className="borsht-player-name">Player {playerId}</div>
@@ -131,7 +132,7 @@ const BlackPepperDecision = ({
             <div className="borsht-decision-subtitle">
               Take one random card from each opponent's hand
             </div>
-            <div className="borsht-players-summary">
+            <div className="borsht-players-summary scrollable-container">
               {targetPlayers.map(([playerId, playerData]) => (
                 <div key={playerId} className="borsht-player-summary">
                   <div className="borsht-player-name">Player {playerId}</div>

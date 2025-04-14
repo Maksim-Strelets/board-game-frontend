@@ -19,20 +19,8 @@
 .game-grid {
   margin-top: 10px;
   display: grid;
-  grid-template-columns: repeat(1, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 1rem;
-}
-
-@media (min-width: 640px) {
-  .game-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 1024px) {
-  .game-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
 }
 
 /* Game Card Styles */
@@ -42,6 +30,7 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  width: 200px;
 }
 
 .game-card:hover {

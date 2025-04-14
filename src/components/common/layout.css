@@ -29,8 +29,7 @@
 
 .app-main {
   flex-grow: 1;
-  max-width: 1400px;
-  margin: 0 auto;
+  margin: 0;
   padding: 0.5rem;
 }
 

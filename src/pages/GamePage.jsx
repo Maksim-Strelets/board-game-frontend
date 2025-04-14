@@ -151,7 +151,6 @@ const GameRoomsPage = () => {
         status: newRoom.status
       };
 
-      setGameRooms(prev => [...prev, transformedRoom]);
       setIsCreateRoomDialogOpen(false);
     } catch (err) {
       console.error('Error creating room:', err);
