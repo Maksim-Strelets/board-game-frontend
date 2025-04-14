@@ -19,6 +19,7 @@ const LoginPage = () => {
       await login(username, password);
       // Redirect to home page after successful login
       navigate('/');
+      window.location.reload();
     } catch (error) {
       // Handle login error
       setLoginError(error.response?.data?.detail || 'Login failed');
