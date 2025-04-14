@@ -102,9 +102,7 @@ const GameRoomsPage = () => {
     const connectWebSocket = async () => {
       try {
         console.log('Connecting to WebSocket...');
-        await ws.connect(`/game/${gameId}/`, {
-          params: { user_id: user.id }
-        });
+        await ws.connect(`/game/${gameId}/`);
         console.log('WebSocket connected successfully');
       } catch (err) {
         console.error('WebSocket connection error:', err);

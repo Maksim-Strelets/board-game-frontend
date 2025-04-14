@@ -174,9 +174,7 @@ const RoomPage: React.FC = () => {
         });
 
         if (!api.getWs().socket) {
-          await api.getWs().connect(`/game/${gameId}/room/${roomId}`, {
-                  params: { user_id: user.id }
-                });
+          await api.getWs().connect(`/game/${gameId}/room/${roomId}`);
         }
 
       } catch (error) {

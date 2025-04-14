@@ -73,7 +73,7 @@ class WebSocketManager {
   /**
    * Connect to a WebSocket endpoint
    * @param {string} endpoint - The WebSocket endpoint (without base URL)
-   * @param {Object} options - Connection options
+   * @param {Object} options - Connection options (optional)
    * @returns {Promise} - Resolves when connection is established
    */
   connect(endpoint, options = {}) {
@@ -84,24 +84,25 @@ class WebSocketManager {
     this.isConnecting = true;
     this.connectionPromise = new Promise((resolve, reject) => {
       try {
-        // Add query parameters
-        const params = new URLSearchParams(options.params || {});
+        // Get authentication token
+        const token = localStorage.getItem('user_token');
 
-        // Add authentication token if available
-        const token = localStorage.getItem('authToken');
-        if (token && !params.has('token')) {
-          params.append('token', token);
+        if (!token) {
+          throw new Error('No authentication token available');
         }
 
-        // Build the full URL
-        const queryString = params.toString();
-        const fullUrl = `${config.wsUrl}${endpoint}${queryString ? `?${queryString}` : ''}`;
+        // Build the full URL (token is sent in the WebSocket connection)
+        const fullUrl = `${config.wsUrl}${endpoint}`;
 
-        // Create WebSocket connection
-        this.socket = new WebSocket(fullUrl, options.protocols || []);
+        const authProtocol = `token.${token}`;
+        const protocols = [...(options.protocols || []), authProtocol];
 
+        console.log(`Connecting to WebSocket at ${fullUrl}`);
+        this.socket = new WebSocket(fullUrl, protocols);
+
+        // Add token to first message - this technique works for servers that can't
+        // access Authorization headers during the handshake
         this.socket.onopen = () => {
-          console.log('WebSocket connected');
           this.reconnectAttempts = 0;
           this.reconnectDelay = 1000;
           this.isConnecting = false;
@@ -115,7 +116,7 @@ class WebSocketManager {
 
         this.socket.onclose = (event) => {
           console.log(`WebSocket closed: ${event.code} ${event.reason}`);
-//          this._handleReconnect(endpoint, options); TODO: reconnect ?
+          this.socket = null;
 
           // Notify any registered close listeners
           if (this.listeners.close) {
