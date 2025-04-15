@@ -753,9 +753,12 @@ const Game = ({ roomId, user }) => {
 
   const isCurrentPlayerTurn = gameState.current_player === user.id;
   const handCards = gameState.your_hand || [];
+  const handCardsLimit = gameState.hand_cards_limit || 8;
   const borshtCards = gameState.your_borsht || [];
   const recipe = gameState.your_recipe || {};
   const market = gameState.market || [];
+  const marketLimit = gameState.market_limit || 8;
+  const marketBaseLimit = gameState.market_base_limit || 8;
   const discardTop = gameState.discard_pile_top;
   const otherPlayers = gameState.players || {};
 
@@ -834,9 +837,9 @@ const Game = ({ roomId, user }) => {
         <div className="borsht-market-section">
           <div className="borsht-market-header-vertical">
             <div className="borsht-market-title">Market</div>
-            {gameState.market_limit < 8 && (
+            {marketLimit < marketBaseLimit && (
               <div className="borsht-market-limit">
-                Limited: {market.length}/{gameState.market_limit}
+                Limited
               </div>
             )}
           </div>
@@ -979,8 +982,8 @@ const Game = ({ roomId, user }) => {
               {/* Row 2: Hand */}
               <div className="borsht-hand-container">
                 <div className="borsht-hand-header">
-                  <div className="borsht-hand-title">Your Hand ({handCards.length}/8)</div>
-                  {handCards.length > 8 && <div className="borsht-hand-warning">Too many cards!</div>}
+                  <div className="borsht-hand-title">Your Hand {handCardsLimit && `(${handCards.length}/${handCardsLimit})`}</div>
+                  {handCards.length > handCardsLimit && <div className="borsht-hand-warning">Too many cards!</div>}
                 </div>
                 <div
                   ref={handContainerRef}

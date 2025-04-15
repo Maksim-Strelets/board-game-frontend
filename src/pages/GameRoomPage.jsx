@@ -6,6 +6,7 @@ import api from '../utils/api'
 
 import './../styles/gameroom.css';
 import './../styles/chat.css';
+import './../styles/gameSettings.css';
 
 import { useAuth } from './../hooks/useAuth'
 
@@ -32,6 +33,8 @@ const RoomPage: React.FC = () => {
   // Add this state for the dynamically loaded game component
   const [GameComponent, setGameComponent] = useState(null);
   const [GameMessagesComponent, setGameMessagesComponent] = useState(null);
+  const [GameSettingsComponent, setGameSettingsComponent] = useState(null);
+  const [gameSettings, setGameSettings] = useState({});
   const [gameLoadError, setGameLoadError] = useState(null);
 
   // Effect to handle auto-scrolling
@@ -65,28 +68,34 @@ const RoomPage: React.FC = () => {
     };
   }, []);
 
-      // Add this effect to dynamically import the game component based on gameId
-    useEffect(() => {
-      if (roomStatus === 'in_progress' && gameId) {
-        const loadGameComponent = async () => {
-          try {
-            // Dynamic import of the game component based on gameId
+  // Effect to dynamically import the game component based on gameId
+  useEffect(() => {
+    if (gameId) {
+      const loadGameComponents = async () => {
+        try {
+          // Dynamic import of the game components based on gameId
+          if (roomStatus === 'in_progress') {
             const GameModule = await import(`./../games/${gameId}/Game.jsx`);
             const GameMessagesModule = await import(`./../games/${gameId}/GameMessages.jsx`);
             setGameComponent(() => GameModule.default);
             setGameMessagesComponent(() => GameMessagesModule.default);
-            setGameLoadError(null);
-          } catch (err) {
-            console.error('Failed to load game component:', err);
-            setGameLoadError(`Failed to load game for ${gameId}`);
           }
-        };
 
-        loadGameComponent();
-      }
-    }, [gameId, roomStatus]);
+          // Always load settings component for waiting rooms
+          const GameSettingsModule = await import(`./../games/${gameId}/GameSettings.jsx`);
+          setGameSettingsComponent(() => GameSettingsModule.default);
+          setGameLoadError(null);
+        } catch (err) {
+          console.error('Failed to load game components:', err);
+          setGameLoadError(`Failed to load game components for ${gameId}`);
+        }
+      };
 
-    // Fetch initial room data
+      loadGameComponents();
+    }
+  }, [gameId, roomStatus]);
+
+  // Fetch initial room data
   useEffect(() => {
     const fetchRoomData = async () => {
       try {
@@ -227,11 +236,19 @@ const RoomPage: React.FC = () => {
     }
   };
 
+  const handleSettingsChange = (newSettings) => {
+    setGameSettings(prevSettings => ({
+      ...prevSettings,
+      ...newSettings
+    }));
+  };
+
   const startGame = () => {
     if (api.getWs().socket) {
       api.getWs().send(JSON.stringify({
         type: 'room_status',
-        status: 'in_progress'
+        status: 'in_progress',
+        settings: gameSettings
       }));
     }
   };
@@ -320,18 +337,33 @@ const RoomPage: React.FC = () => {
               )}
 
               {roomStatus === 'waiting' ? (
-                <button
-                  onClick={startGame}
-                  disabled={
-                    user?.id !== roomUsers[0]?.user_id ||
-                    roomStatus !== 'waiting' ||
-                    roomUsers.length < 2 ||
-                    roomUsers.some(p => p.status !== 'ready')
-                  }
-                  className="btn btn-primary"
-                >
-                  Start Game
-                </button>
+                <div>
+                  {/* Game Settings Section */}
+                  {GameSettingsComponent && user?.id === roomUsers[0]?.user_id && (
+                    <div className="game-settings-section mb-4">
+                      <h3>Game Settings</h3>
+                      <Suspense fallback={<div className="text-center py-4">Loading settings...</div>}>
+                        <GameSettingsComponent
+                          settings={gameSettings}
+                          onSettingsChange={handleSettingsChange}
+                        />
+                      </Suspense>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={startGame}
+                    disabled={
+                      user?.id !== roomUsers[0]?.user_id ||
+                      roomStatus !== 'waiting' ||
+                      roomUsers.length < 2 ||
+                      roomUsers.some(p => p.status !== 'ready')
+                    }
+                    className="start-game-btn"
+                  >
+                    Start Game
+                  </button>
+                </div>
               ) : (
                 <div className="game-board-wrapper">
                   {roomStatus === 'in_progress' && (

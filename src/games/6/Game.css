@@ -1371,6 +1371,8 @@
   border-radius: 8px;
   min-height: 150px;
   max-height: 350px;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .borsht-discard-selection-cards::-webkit-scrollbar {
