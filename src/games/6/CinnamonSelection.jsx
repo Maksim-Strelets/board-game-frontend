@@ -74,7 +74,7 @@ const CinnamonSelection = ({
           Selected: {selectedCards.length} / {selectCount}
         </div>
 
-        <div className="borsht-discard-selection-cards">
+        <div className="borsht-discard-selection-cards overflow-enable">
           {discardPile && discardPile.length > 0 ? (
             discardPile.map((card) => (
               <div

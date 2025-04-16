@@ -246,6 +246,7 @@
 
 .borsht-hand-cards {
   display: flex;
+  flex-flow: wrap;
   justify-content: center;
   gap: 2px;
   min-height: 130px;
@@ -751,6 +752,7 @@
   background-color: #e76f51;
   color: white;
   padding: 3px 8px;
+  margin-top: 5px;
   border-radius: 4px;
   font-size: 0.9rem;
 }
@@ -1371,6 +1373,9 @@
   border-radius: 8px;
   min-height: 150px;
   max-height: 350px;
+}
+
+.overflow-enable {
   overflow-y: auto;
   overflow-x: hidden;
 }

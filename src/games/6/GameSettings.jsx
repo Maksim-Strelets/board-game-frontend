@@ -7,7 +7,7 @@ const GameSettings = ({ settings = {}, onSettingsChange }) => {
     permanent_shkvarka_count: 0,
     general_player_select_timeout: 300,
     player_hand_limit: 8,
-    borscht_recipes_select_count: 8,
+    borscht_recipes_select_count: 3,
     market_capacity: 8,
   };
 
@@ -103,19 +103,15 @@ const GameSettings = ({ settings = {}, onSettingsChange }) => {
         <div className="setting-item">
           <label>
             Recipe Select Count
-            <span className="value-display">{mergedSettings.player_hand_limit === Infinity ? "∞" : mergedSettings.player_hand_limit}</span>
+            <span className="value-display">{mergedSettings.borscht_recipes_select_count}</span>
           </label>
           <select
-            value={mergedSettings.player_hand_limit}
-            onChange={(e) => {
-              const val = e.target.value === "inf" ? Infinity : parseInt(e.target.value, 10);
-              handleSliderChange('player_hand_limit', val);
-            }}
+            value={mergedSettings.borscht_recipes_select_count}
+            onChange={(e) => handleSliderChange('borscht_recipes_select_count', parseInt(e.target.value, 10))}
           >
-            {[3, 4, 5, 6, 7, 8, 9, 10, 12].map(val => (
+            {[1, 2, 3].map(val => (
               <option key={val} value={val}>{val}</option>
             ))}
-            <option value="inf">∞</option>
           </select>
         </div>
 

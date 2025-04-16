@@ -114,8 +114,8 @@ const Game = ({ roomId, user }) => {
         } else if (data.type === 'discard_selection' && data.reason === 'hand_limit') {
           // Store the discard request data
           setDiscardData({
-            hand: data.hand,
-            discard_count: data.discard_count,
+            hand: data.cards,
+            discard_count: data.select_count,
             request_id: data.request_id,
             expires_at: data.expires_at,
             recipe: data.your_recipe,
@@ -124,8 +124,8 @@ const Game = ({ roomId, user }) => {
         } else if (data.type === 'discard_selection' && data.reason === 'market_limit') {
           // Store the market discard request data
           setMarketDiscardData({
-            market: data.market,
-            discard_count: data.discard_count,
+            market: data.cards,
+            discard_count: data.select_count,
             request_id: data.request_id,
             expires_at: data.expires_at,
           });
@@ -152,7 +152,7 @@ const Game = ({ roomId, user }) => {
         } else if (data.type === 'cinnamon_selection') {
           // Store the cinnamon selection data
           setCinnamonData({
-            discard_pile: data.discard_pile,
+            discard_pile: data.cards,
             select_count: data.select_count,
             request_id: data.request_id,
             expires_at: data.expires_at,
@@ -161,7 +161,7 @@ const Game = ({ roomId, user }) => {
         } else if (data.type === 'ginger_selection') {
           // Store the ginger selection data
           setGingerData({
-            market: data.market,
+            market: data.cards,
             select_count: data.select_count,
             request_id: data.request_id,
             expires_at: data.expires_at,
@@ -753,7 +753,7 @@ const Game = ({ roomId, user }) => {
 
   const isCurrentPlayerTurn = gameState.current_player === user.id;
   const handCards = gameState.your_hand || [];
-  const handCardsLimit = gameState.hand_cards_limit || 8;
+  const handCardsLimit = gameState.hand_cards_limit;
   const borshtCards = gameState.your_borsht || [];
   const recipe = gameState.your_recipe || {};
   const market = gameState.market || [];
@@ -983,7 +983,7 @@ const Game = ({ roomId, user }) => {
               <div className="borsht-hand-container">
                 <div className="borsht-hand-header">
                   <div className="borsht-hand-title">Your Hand {handCardsLimit && `(${handCards.length}/${handCardsLimit})`}</div>
-                  {handCards.length > handCardsLimit && <div className="borsht-hand-warning">Too many cards!</div>}
+                  {handCardsLimit && handCards.length > handCardsLimit && <div className="borsht-hand-warning">Too many cards!</div>}
                 </div>
                 <div
                   ref={handContainerRef}
@@ -1242,7 +1242,7 @@ const Game = ({ roomId, user }) => {
               type: 'request_response',
               request_id: cinnamonData.request_id,
               selected_cards: [],
-              random_selection: true,
+              random_select: true,
             }));
             setCinnamonData(null);
           }}
@@ -1263,7 +1263,7 @@ const Game = ({ roomId, user }) => {
                 type: 'request_response',
                 request_id: discardData.request_id,
                 selected_cards: [],
-                random_discard: true,
+                random_select: true,
               }));
               setDiscardData(null);
             }}
@@ -1283,7 +1283,7 @@ const Game = ({ roomId, user }) => {
                 type: 'request_response',
                 request_id: marketDiscardData.request_id,
                 selected_cards: [],
-                random_discard: true,
+                random_select: true,
               }));
               setMarketDiscardData(null);
             }}
@@ -1303,7 +1303,7 @@ const Game = ({ roomId, user }) => {
                 type: 'request_response',
                 request_id: oliveOilData.request_id,
                 selected_cards: [],
-                random_selection: true,
+                random_select: true,
               }));
               setOliveOilData(null);
             }}
@@ -1323,7 +1323,7 @@ const Game = ({ roomId, user }) => {
                 type: 'request_response',
                 request_id: gingerData.request_id,
                 selected_cards: [],
-                random_selection: true,
+                random_select: true,
               }));
               setGingerData(null);
             }}
