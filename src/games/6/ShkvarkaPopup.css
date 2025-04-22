@@ -1,0 +1,164 @@
+.shkvarka-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  cursor: pointer;
+}
+
+.shkvarka-popup {
+  background-color: #fff;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: popup-slide-in 0.3s ease-out;
+  cursor: default;
+}
+
+@keyframes popup-slide-in {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.shkvarka-popup-header {
+  background: linear-gradient(135deg, #d91b1b, #b31515);
+  color: white;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.shkvarka-popup-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.shkvarka-popup-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  font-size: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  z-index: 1;
+  transition: background-color 0.2s;
+}
+
+.shkvarka-popup-close:hover {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.shkvarka-popup-content {
+  padding: 16px;
+  flex-grow: 1;
+}
+
+.shkvarka-popup-player {
+  margin-bottom: 12px;
+  font-size: 1rem;
+  color: #264653;
+  font-weight: bold;
+}
+
+.shkvarka-popup-card-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 10px;
+  background-color: #fef3c7;
+  border-radius: 6px;
+}
+
+.shkvarka-popup-card {
+  width: 100px;
+  height: 140px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  border-radius: 8px;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.shkvarka-popup-card:hover {
+  transform: scale(1.6);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.shkvarka-popup-card-info {
+  flex-grow: 1;
+}
+
+.shkvarka-popup-card-info h4 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 1.1rem;
+  color: #d91b1b;
+  text-transform: capitalize;
+}
+
+.shkvarka-popup-card-info p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  color: #555;
+}
+
+.shkvarka-popup-footer {
+  padding: 12px 16px;
+  display: flex;
+  justify-content: center;
+  border-top: 1px solid #eee;
+}
+
+.shkvarka-popup-button {
+  background-color: #e9c46a;
+  border: none;
+  width: 100%;
+  color: #7c0000;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.shkvarka-popup-button:hover {
+  background-color: #ffcc00;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.shkvarka-popup-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}

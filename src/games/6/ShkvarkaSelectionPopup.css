@@ -1,0 +1,131 @@
+/* ShkvarkaSelectionPopup specific styles */
+.shkvarka-selection-popup {
+  width: 95%;
+  max-width: 900px;
+}
+
+/* Container for the triggering card */
+.shkvarka-trigger-card-container {
+  display: flex;
+  justify-content: center;
+  margin: 10px 0 15px;
+}
+
+/* Styling for the card that triggered the effect */
+.shkvarka-trigger-card {
+  width: 100px;
+  height: 140px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+  position: relative;
+  transition: transform 0.3s ease;
+  border: 2px solid #d91b1b;
+}
+
+.shkvarka-trigger-card:hover {
+  transform: translateY(-15px) scale(1.8);
+  z-index: 10;
+}
+
+/* Counter for selected cards */
+.shkvarka-selection-counter {
+  text-align: center;
+  margin: 10px 0;
+  font-weight: bold;
+  color: #d91b1b;
+  font-size: 1.1rem;
+}
+
+/* Make cards in selection flexible and responsive */
+.shkvarka-selection-popup .borsht-discard-selection-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: center;
+  padding: 15px;
+  background-color: #fef3c7;
+  border-radius: 8px;
+  min-height: 150px;
+  max-height: 350px;
+}
+
+/* Selected card styling */
+.shkvarka-selection-popup .borsht-card.selected {
+  border: 3px solid #d91b1b;
+  transform: translateY(-10px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Hover effect for selectable cards */
+.shkvarka-selection-popup .borsht-card:hover {
+  transform: translateY(-15px) scale(1.3);
+  z-index: 20;
+}
+
+/* Style the buttons to match game */
+.shkvarka-selection-popup .borsht-decision-actions {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.shkvarka-selection-popup .borsht-button-confirm {
+  background-color: #2a9d8f;
+  color: white;
+}
+
+.shkvarka-selection-popup .borsht-button-confirm:hover:not(.disabled) {
+  background-color: #218a7e;
+  transform: translateY(-2px);
+}
+
+.shkvarka-selection-popup .borsht-button-cancel {
+  background-color: #e76f51;
+  color: white;
+}
+
+.shkvarka-selection-popup .borsht-button-cancel:hover {
+  background-color: #d65c3e;
+  transform: translateY(-2px);
+}
+
+.shkvarka-selection-popup .borsht-button.disabled {
+  background-color: #ccc;
+  color: #666;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .shkvarka-selection-popup .borsht-decision-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .shkvarka-trigger-card {
+    width: 80px;
+    height: 120px;
+  }
+}
+
+/* Adding animation for the popup */
+.shkvarka-selection-popup {
+  animation: popup-slide-in 0.3s ease-out;
+}
+
+@keyframes popup-slide-in {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

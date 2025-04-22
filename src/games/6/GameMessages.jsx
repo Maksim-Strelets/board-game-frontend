@@ -24,51 +24,52 @@ const GameMessages = ({ websocket, players }) => {
         const data = JSON.parse(event.data);
         let message = '';
         const timestamp = new Date().toLocaleTimeString();
-        const CardNames = '';
+        let CardNames = '';
+        let playerName = '';
 
         // Create human-readable messages based on message type
         switch (data.type) {
           case 'new_turn':
-            const playerName = data.player.user_id === players.currentUserId
+            playerName = data.player.user_id === players.currentUserId
               ? 'You'
               : players[data.player.user_id]?.user_data.username || `Player ${data.player.user_id}`;
             message = `${playerName}'s turn`;
             break;
 
           case 'recipe_completed':
-            const completingPlayer = data.player.user_id === players.currentUserId
+            playerName = data.player.user_id === players.currentUserId
               ? 'You'
               : players[data.player.user_id]?.user_data.username || `Player ${data.player.user_id}`;
-            message = `${completingPlayer} completed their recipe${data.is_first ? ' first' : ''}!`;
+            message = `${playerName} completed their recipe${data.is_first ? ' first' : ''}!`;
             break;
 
           case 'ingredient_added':
-            const addingPlayer = data.player.user_id === players.currentUserId
+            playerName = data.player.user_id === players.currentUserId
               ? 'You'
               : players[data.player.user_id]?.user_data.username || `Player ${data.player.user_id}`;
-            message = `${addingPlayer} added ${data.card?.name || data.card?.id || 'an ingredient'} to their borscht`;
+            message = `${playerName} added ${data.card?.name || data.card?.id || 'an ingredient'} to their borscht`;
             break;
 
           case 'cards_drawn':
-            const drawingPlayer = data.player.user_id === players.currentUserId
+            playerName = data.player.user_id === players.currentUserId
               ? 'You'
               : players[data.player.user_id]?.user_data.username || `Player ${data.player.user_id}`;
-            message = `${drawingPlayer} drew ${data.count} card${data.count !== 1 ? 's' : ''}`;
+            message = `${playerName} drew ${data.count} card${data.count !== 1 ? 's' : ''}`;
             break;
 
           case 'special_played':
-            const specialPlayer = data.player.user_id === players.currentUserId
+            playerName = data.player.user_id === players.currentUserId
               ? 'You'
               : players[data.player.user_id]?.user_data.username || `Player ${data.player.user_id}`;
-            message = `${specialPlayer} played ${data.special_card}`;
+            message = `${playerName} played ${data.special_card}`;
             break;
 
           case 'cards_from_discard_selected':
             CardNames = data.cards?.map(card => card[1].name || card[1].id).join(', ') || 'some cards';
-            const discardPlayer = data.player.user_id === players.currentUserId
+            playerName = data.player.user_id === players.currentUserId
               ? 'You'
               : players[data.player.user_id]?.user_data.username || `Player ${data.player.user_id}`;
-            message = `${discardPlayer} took ${CardNames} from the discard pile`;
+            message = `${playerName} took ${CardNames} from the discard pile`;
             break;
 
           case 'market_cards_taken':
@@ -112,10 +113,19 @@ const GameMessages = ({ websocket, players }) => {
             break;
 
           case 'borsht_card_discarded':
-            const borshtPlayer = data.player.user_id === players.currentUserId
+            CardNames = data.cards?.map(card => card.name || card.id).join(', ') || 'some cards';
+            playerName = data.player.user_id === players.currentUserId
               ? 'Your'
               : `${players[data.player.user_id]?.user_data.username || `Player ${data.player.user_id}`}'s`;
-            message = `${data.card?.name || data.card?.id || 'A card'} was discarded from ${borshtPlayer} borscht`;
+            message = `${CardNames} was discarded from ${playerName} borscht`;
+            break;
+
+          case 'cards_from_hand_discarded':
+            CardNames = data.cards?.map(card => card.name || card.id).join(', ') || 'some cards';
+            playerName = data.player.user_id === players.currentUserId
+              ? 'Your'
+              : `${players[data.player.user_id]?.user_data.username || `Player ${data.player.user_id}`}'s`;
+            message = `${CardNames} was discarded from ${playerName} hand`;
             break;
 
           case 'chili_pepper_effect_applied':
@@ -129,22 +139,47 @@ const GameMessages = ({ websocket, players }) => {
             break;
 
           case 'cards_from_market_discarded':
-            CardNames = data.cards?.map(card => card[1].name || card[1].id).join(', ') || 'some cards';
+            CardNames = data.cards?.map(card => card.name || card.id).join(', ') || 'some cards';
             message = `${CardNames} discarded from market`;
             break;
 
           case 'market_cards_added':
-            CardNames = data.cards?.map(card => card[1].name || card[1].id).join(', ') || 'some cards';
+            CardNames = data.cards?.map(card => card.name || card.id).join(', ') || 'some cards';
             message = `${CardNames} added to market`;
             break;
 
           case 'ingredients_exchanged':
             const HandCardNames = data.hand_cards?.map(card => card[1].name || card[1].id).join(', ') || 'some cards';
             const MarketCardNames = data.market_cards?.map(card => card[1].name || card[1].id).join(', ') || 'some cards';
-            const exchangingPlayer = data.player.user_id === players.currentUserId
+            playerName = data.player.user_id === players.currentUserId
               ? 'You'
               : players[data.player.user_id]?.user_data.username || `Player ${data.player.user_id}`;
-            message = `${exchangingPlayer} exchanged ${HandCardNames} from hand for ${MarketCardNames} from market`;
+            message = `${playerName} exchanged ${HandCardNames} from hand for ${MarketCardNames} from market`;
+            break;
+
+          case 'shkvarka_drawn':
+            playerName = data.player.user_id === players.currentUserId
+              ? 'You'
+              : players[data.player.user_id]?.user_data.username || `Player ${data.player.user_id}`;
+            message = `${playerName} drew shkvarka ${data.card?.name}`;
+            break;
+
+          case 'shkvarka_effect_discard':
+            CardNames = data.discarded_cards?.map(card => card.name || card.id).join(', ') || 'some cards';
+            const SelectorPlayer = data.selector_player.user_id === players.currentUserId
+              ? 'You'
+              : players[data.selector_player.user_id]?.user_data.username || `Player ${data.selector_player.user_id}`;
+            const TargetPlayer = data.target_player.user_id === players.currentUserId
+              ? 'You'
+              : players[data.target_player.user_id]?.user_data.username || `Player ${data.target_player.user_id}`;
+            message = `${SelectorPlayer} discarded ${CardNames} from ${TargetPlayer}'s hand'`;
+            break;
+
+          case 'shkvarka_effect_no_rare':
+            playerName = data.player.user_id === players.currentUserId
+              ? 'You'
+              : players[data.player.user_id]?.user_data.username || `Player ${data.player.user_id}`;
+              message = `${playerName} has no rare ingredients to discard`
             break;
 
           default:

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { CircleUser, Settings, Info, Heart, Search, RefreshCw } from 'lucide-react';
 
+import ShkvarkaPopup from './ShkvarkaPopup';
 import DecisionPopup from './DecisionPopup';
 import PlayerDecision from './PlayerDecision';
 import GingerSelection from './GingerSelection';
@@ -12,6 +13,7 @@ import CinnamonSelection from './CinnamonSelection';
 import RedPepperDecision from './RedPepperDecision';
 import BlackPepperDecision from './BlackPepperDecision';
 import MarketDiscardSelection from './MarketDiscardSelection';
+import ShkvarkaSelectionPopup from './ShkvarkaSelectionPopup';
 
 import GameStats from './GameStats';
 import './GameStats.css';
@@ -32,9 +34,11 @@ const Game = ({ roomId, user }) => {
   const [error, setError] = useState(null);
   const [selectedMarketCards, setSelectedMarketCards] = useState([]);
   const [selectedHandCards, setSelectedHandCards] = useState([]);
-  const [cinnamonData, setCinnamonData] = useState(null);
 
   //  decision
+  const [shkvarkaData, setShkvarkaData] = useState(null);
+  const [shkvarkaSelectionData, setShkvarkaSelectionData] = useState(null);
+
   const [pendingRequest, setPendingRequest] = useState(null);
   const [recipeOptions, setRecipeOptions] = useState([]);
   const [timeRemaining, setTimeRemaining] = useState(0);
@@ -42,6 +46,7 @@ const Game = ({ roomId, user }) => {
   const [discardData, setDiscardData] = useState(null);
   const [marketDiscardData, setMarketDiscardData] = useState(null);
   const [oliveOilData, setOliveOilData] = useState(null);
+  const [cinnamonData, setCinnamonData] = useState(null);
   const [gingerData, setGingerData] = useState(null);
   const [redPepperData, setRedPepperData] = useState(null);
   const [blackPepperData, setBlackPepperData] = useState(null);
@@ -165,6 +170,26 @@ const Game = ({ roomId, user }) => {
             select_count: data.select_count,
             request_id: data.request_id,
             expires_at: data.expires_at,
+          });
+
+        } else if (data.type === 'shkvarka_drawn') {
+          // Store the shkvarka notification data
+          setShkvarkaData({
+            card: data.card,
+            player: data.player,
+            showPopup: data.show_popup,
+          });
+
+        } else if (data.type === 'shkvarka_effect_selection') {
+          // Store the shkvarka selection request data
+          setShkvarkaSelectionData({
+            cards: data.cards,
+            select_count: data.select_count,
+            reason: data.reason,
+            request_id: data.request_id,
+            expires_at: data.expires_at,
+            selector_id: data.selector_id,
+            owner_player: data.owner_player,
           });
 
         } else if (data.type === 'game_ended') {
@@ -334,6 +359,39 @@ const Game = ({ roomId, user }) => {
         // Clear the cinnamon data
         setCinnamonData(null);
       };
+
+  const handleCloseShkvarkaPopup = () => {
+      setShkvarkaData(null);
+    };
+
+  const handleShkvarkaSelection = (selectedCardIds) => {
+      if (!shkvarkaSelectionData || !shkvarkaSelectionData.request_id) return;
+
+      // Send the selection to the server
+      api.getWs().send(JSON.stringify({
+        type: 'request_response',
+        request_id: shkvarkaSelectionData.request_id,
+        selected_cards: selectedCardIds,
+      }));
+
+      // Clear the shkvarka selection data
+      setShkvarkaSelectionData(null);
+    };
+
+  const handleCancelShkvarkaSelection = () => {
+      if (!shkvarkaSelectionData || !shkvarkaSelectionData.request_id) return;
+
+      // Send empty selection with random_select flag
+      api.getWs().send(JSON.stringify({
+        type: 'request_response',
+        request_id: shkvarkaSelectionData.request_id,
+        selected_cards: [],
+        random_select: true,
+      }));
+
+      // Clear the shkvarka selection data
+      setShkvarkaSelectionData(null);
+    };
 
   const handleGingerSelection = (selectedCardIds) => {
       if (!gingerData || !gingerData.request_id) return;
@@ -1356,6 +1414,30 @@ const Game = ({ roomId, user }) => {
               setBlackPepperData(null);
             }}
             hidePopup={toggleActionPanel}
+          />
+        )}
+
+      {showActionPanel && shkvarkaSelectionData && (
+          <ShkvarkaSelectionPopup
+            playerId={user.id}
+            ownerPlayer={shkvarkaSelectionData.owner_player}
+            cards={shkvarkaSelectionData.cards}
+            selectCount={shkvarkaSelectionData.select_count}
+            reason={shkvarkaSelectionData.reason}
+            expiresAt={shkvarkaSelectionData.expires_at}
+            requestId={shkvarkaSelectionData.request_id}
+            onSubmit={handleShkvarkaSelection}
+            onCancel={handleCancelShkvarkaSelection}
+            hidePopup={toggleActionPanel}
+          />
+        )}
+
+            {/* Shkvarka handling */}
+      {shkvarkaData && shkvarkaData.showPopup && (
+          <ShkvarkaPopup
+            card={shkvarkaData.card}
+            player={shkvarkaData.player}
+            onClose={handleCloseShkvarkaPopup}
           />
         )}
 
