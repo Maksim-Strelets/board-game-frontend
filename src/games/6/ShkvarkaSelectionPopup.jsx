@@ -10,6 +10,7 @@ const reasonDescriptions = {
   'vtratyv_niuh': 'Select extra card from {playerName}\'s borsht to discard',
   'den_vrozhaiu': 'Select card from Your borsht to discard',
   'zagubyly_spysok': 'Select card from Your borsht to discard',
+  'mityng_zahysnykiv': 'Select any meat card to discard from {playerName} borsht',
   'default': 'Select the required number of cards from {playerName}.',
   // ... etc.
 };

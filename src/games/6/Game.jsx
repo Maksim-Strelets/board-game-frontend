@@ -34,6 +34,7 @@ const Game = ({ roomId, user }) => {
   const [error, setError] = useState(null);
   const [selectedMarketCards, setSelectedMarketCards] = useState([]);
   const [selectedHandCards, setSelectedHandCards] = useState([]);
+  const [viewingOpponentRecipe, setViewingOpponentRecipe] = useState(null);
 
   //  decision
   const [shkvarkaData, setShkvarkaData] = useState(null);
@@ -833,6 +834,18 @@ const Game = ({ roomId, user }) => {
                 <div className="borsht-player-stats">
                   <span>Cards: {playerData.hand_size || 0}</span>
                   <span> Points: {calculateTotalPoints(playerData?.borsht)} </span>
+                  {gameState.recipes_revealed && playerData.recipe && (
+                    <button
+                      className="borsht-button borsht-recipe-button"
+                      onClick={() => {
+                        setViewingOpponentRecipe(playerData.recipe);
+                        setShowRecipePopup(true);
+                      }}
+                      title="View this player's recipe"
+                    >
+                      Show recipe
+                    </button>
+                  )}
                 </div>
               </div>
               <div className="borsht-borsht-container">
@@ -859,11 +872,6 @@ const Game = ({ roomId, user }) => {
                   </div>
                 )}
               </div>
-              {gameState.recipes_revealed && playerData.recipe && (
-                <div className="borsht-recipe-info">
-                  Recipe: {playerData.recipe.name}
-                </div>
-              )}
             </div>
           ))}
         </div>
@@ -1223,19 +1231,25 @@ const Game = ({ roomId, user }) => {
       )}
 
       {/* Recipe Popup */}
-        {showRecipePopup && recipe && (
-          <div className="borsht-recipe-popup-overlay" onClick={() => setShowRecipePopup(false)}>
+        {showRecipePopup && (viewingOpponentRecipe || recipe) && (
+          <div className="borsht-recipe-popup-overlay" onClick={() => {
+            setShowRecipePopup(false);
+            setViewingOpponentRecipe(null);
+          }}>
             <div className="borsht-recipe-popup" onClick={(e) => e.stopPropagation()}>
               <button
                 className="borsht-recipe-popup-close"
-                onClick={() => setShowRecipePopup(false)}
+                onClick={() => {
+                  setShowRecipePopup(false);
+                  setViewingOpponentRecipe(null);
+                }}
               >
                 ×
               </button>
               <div
                 className="borsht-recipe-popup-image"
                 style={{
-                  backgroundImage: `url('/games/borscht/recipes/${recipe.id || 'default'}_full.png')`
+                  backgroundImage: `url('/games/borscht/recipes/${(viewingOpponentRecipe || recipe).id || 'default'}_full.png')`
                 }}
               >
               </div>

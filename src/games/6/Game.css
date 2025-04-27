@@ -2136,3 +2136,39 @@
   border-radius: 5px;
   background-color: #f7f7f7;
 }
+
+/* Add this CSS to your Game.css file */
+
+.borsht-recipe-button {
+  border: none;
+  color: #264653;
+  padding: 2px;
+  margin-left: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.borsht-recipe-button:hover {
+  background-color: #ffd700;
+  color: #7c0000;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.borsht-recipe-button:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* Make player stats area have proper alignment for the new button */
+.borsht-player-stats {
+  display: flex;
+  gap: 12px;
+  color: #666;
+  font-size: 0.875rem;
+  align-items: center;
+}
