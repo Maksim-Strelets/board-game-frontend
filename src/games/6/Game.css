@@ -1107,7 +1107,6 @@
   position: relative;
   cursor: default;
   padding: 20px;
-  overflow-y: auto;
 }
 
 .borsht-decision-popup-close {
@@ -1864,6 +1863,7 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: 5px;
+  margin: 15px;
 }
 
 .borsht-target-cards .borsht-card {

@@ -129,13 +129,14 @@ const GameMessages = ({ websocket, players }) => {
             break;
 
           case 'chili_pepper_effect_applied':
+            CardNames = data.target_cards?.map(card => card.name || card.id).join(', ') || 'some cards';
             const pepperPlayer = data.player.user_id === players.currentUserId
               ? 'You'
               : players[data.player.user_id]?.user_data.username || `Player ${data.player.user_id}`;
             const pepperTarget = data.target_player === players.currentUserId
               ? 'your'
               : `${players[data.target_player]?.user_data.username || `Player ${data.target_player}`}'s`;
-            message = `${pepperPlayer} ${data.action_type === 'steal' ? 'stole from' : 'discarded from'} ${pepperTarget} borscht`;
+            message = `${pepperPlayer} ${data.action_type === 'steal' ? 'stole' : 'discarded'} ${CardNames} from ${pepperTarget} borscht`;
             break;
 
           case 'cards_from_market_discarded':

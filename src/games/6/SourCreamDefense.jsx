@@ -4,6 +4,7 @@ const SourCreamDefense = ({
   attacker,
   attackCard,
   targetCards,
+  defendCards,
   expiresAt,
   onDefend,
   onDecline,
@@ -95,14 +96,22 @@ const SourCreamDefense = ({
 
           <div className="borsht-defense-section">
             <div className="borsht-card-label">Defense Card:</div>
-            <div
-              className="borsht-card borsht-defense-card"
-              style={{backgroundImage: `url('/games/borscht/cards/sour_cream.png')`}}
-            >
-              <div className="borsht-selection-card-tooltip">
-                <strong>Sour Cream</strong>
-                <p>Defense card that can block special card effects.</p>
-              </div>
+            <div className="borsht-target-cards">
+              {defendCards && defendCards.length > 0 ? (
+                defendCards.map((card, index) => (
+                  <div
+                    key={index}
+                    className="borsht-card borsht-defense-card"
+                    style={{backgroundImage: `url('/games/borscht/cards/${card.id}.png')`}}
+                  >
+                    <div className="borsht-selection-card-tooltip">
+                      <strong>{card.name || card.id}</strong>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="borsht-target-cards-empty">No specific cards</div>
+              )}
             </div>
           </div>
         </div>

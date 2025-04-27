@@ -141,6 +141,7 @@ const Game = ({ roomId, user }) => {
             attacker: data.attacker,
             attackCard: data.card,
             targetCards: data.target_cards,
+            defendCards: data.defense_cards,
             request_id: data.request_id,
             expires_at: data.expires_at
           });
@@ -315,14 +316,14 @@ const Game = ({ roomId, user }) => {
       return true; // For other cards, this check doesn't apply
     };
 
-  const handleRedPepperDecision = (action) => {
+  const handleRedPepperDecision = (action, selectedOpponentId, selectedCards) => {
       if (!redPepperData) return;
 
       const moveData = {
         action: 'play_special',
         card_id: selectedCard.uid,
-        target_player: redPepperData.targetPlayer,
-        target_cards: [redPepperData.targetCard.uid],
+        target_player: selectedOpponentId,
+        target_cards: selectedCards,
         action_type: action  // 'steal' or 'discard'
       };
 
@@ -576,33 +577,8 @@ const Game = ({ roomId, user }) => {
     }
       // For Red Pepper, check if a target card is selected
       if (selectedCard.id === 'chili_pepper') {
-        if (!targetPlayer || !targetCard) {
-          alert('Please select a card from an opponent\'s borsht first');
-          return;
-        }
-
-        // Find the target card details from the opponent's borsht
-        const opponent = gameState.players[targetPlayer];
-        if (!opponent || !opponent.borsht) {
-          alert('Cannot find the selected card');
-          return;
-        }
-
-        if (targetPlayer === gameState?.first_finisher?.user_id) {
-          alert('Cannot use pepper on this player');
-          return;
-        }
-
-        const targetCardDetails = opponent.borsht.find(card => card.uid === targetCard);
-        if (!targetCardDetails) {
-          alert('Cannot find the selected card');
-          return;
-        }
-
         // Set the red pepper data for the popup
         setRedPepperData({
-          targetPlayer,
-          targetCard: targetCardDetails,
           playerRecipe: gameState.your_recipe,
           playerBorsht: gameState.your_borsht
         });
@@ -658,8 +634,9 @@ const Game = ({ roomId, user }) => {
 
       const marketCardsCost = calculateCardsCost(selectedMarketCards);
       const handCardsCost = calculateCardsCost(selectedHandCards);
+      const exchangeFee = gameState.market_exchange_fee || 0
 
-      return handCardsCost >= marketCardsCost;
+      return handCardsCost >= marketCardsCost + exchangeFee;
     };
 
   // Handle exchanging ingredients with the market
@@ -1090,6 +1067,7 @@ const Game = ({ roomId, user }) => {
                         !isCurrentPlayerTurn ||
                         gameState?.turn_state !== "normal_turn" ||
                         !selectedCard ||
+                        (selectedCard.type === 'extra' && gameState.extra_cards_not_allowed) ||
                         selectedCard.type === 'special' ||
                         selectedMarketCards.length > 0 ||
                         selectedHandCards.length !== 1 ||
@@ -1106,6 +1084,8 @@ const Game = ({ roomId, user }) => {
                             ? "Select exactly one card"
                           : !selectedCard
                             ? "Select a card first"
+                          : (selectedCard.type === 'extra' && gameState.extra_cards_not_allowed)
+                            ? "Extra cards not allowed"
                           : selectedCard.type === 'special'
                             ? "Can't add special cards to borsht"
                           : borshtCards.some(borshtCard => borshtCard.id === selectedCard.id)
@@ -1147,7 +1127,6 @@ const Game = ({ roomId, user }) => {
                         selectedMarketCards.length > 0 ||
                         selectedHandCards.length !== 1 ||
                         (selectedCard && selectedCard.id === 'cinnamon' && (!gameState.discard_pile_size || gameState.discard_pile_size === 0)) ||
-                        (selectedCard && selectedCard.id === 'chili_pepper' && (!targetPlayer || !targetCard)) ||
                         (gameState?.first_finisher && targetPlayer === gameState?.first_finisher?.user_id)
                       }
                       data-tooltip={
@@ -1169,8 +1148,6 @@ const Game = ({ roomId, user }) => {
                             ? "Cannot use special cards against first finisher"
                           : (selectedCard.id === 'cinnamon' && (!gameState.discard_pile_size || gameState.discard_pile_size === 0))
                             ? "Cannot play Cinnamon when the discard pile is empty"
-                          : (selectedCard.id === 'chili_pepper' && (!targetPlayer || !targetCard))
-                            ? "Select a card from an opponent's borsht first"
                             : "Play the selected special card"
                       }
                     >
@@ -1280,6 +1257,7 @@ const Game = ({ roomId, user }) => {
             attacker={defenseData.attacker}
             attackCard={defenseData.attackCard}
             targetCards={defenseData.targetCards}
+            defendCards={defenseData.defendCards}
             expiresAt={defenseData.expires_at}
             onDefend={handleDefend}
             onDecline={handleDeclineDefense}
@@ -1390,11 +1368,13 @@ const Game = ({ roomId, user }) => {
 
       {showActionPanel && redPepperData && (
           <RedPepperDecision
-            targetPlayer={redPepperData.targetPlayer}
-            targetCard={redPepperData.targetCard}
+            players={gameState.players}
             playerRecipe={redPepperData.playerRecipe}
             playerBorsht={redPepperData.playerBorsht}
             hidePopup={toggleActionPanel}
+            currentPlayer={gameState.current_player}
+            firstFinisher={gameState.first_finisher}
+            discardCount={gameState.chili_pepper_discard_count}
             onSelect={handleRedPepperDecision}
             onCancel={() => {
               setRedPepperData(null);
