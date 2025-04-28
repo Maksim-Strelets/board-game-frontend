@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Plus, ArrowLeft } from 'lucide-react';
+import { Plus, ArrowLeft, UserCheck } from 'lucide-react';
 import CreateRoomModal from './../components/games/gamelist/CreateRoomModal';
 import { useAuth } from './../hooks/useAuth';
 import api from '../utils/api'
@@ -42,15 +42,22 @@ const GameRoomsPage = () => {
       const data = await api.get(`/board-games/${selectedGame.id}/rooms`);
 
       // Transform rooms to match the existing UI structure
-      const transformedRooms = data.map(room => ({
-        id: room.id.toString(),
-        gameId: room.game_id.toString(),
-        name: room.name,
-        creator: 'Unknown', // Backend doesn't provide creator info
-        currentPlayers: room.players ? room.players.length : 0,
-        maxPlayers: room.max_players,
-        status: room.status
-      }));
+      const transformedRooms = data.map(room => {
+        // Check if current user is already in this room
+        const isUserInRoom = room.players && room.players.some(player => player.user_id === user?.id);
+
+        return {
+          id: room.id.toString(),
+          gameId: room.game_id.toString(),
+          name: room.name,
+          creator: 'Unknown', // Backend doesn't provide creator info
+          currentPlayers: room.players ? room.players.length : 0,
+          maxPlayers: room.max_players,
+          status: room.status,
+          players: room.players || [],
+          isUserInRoom // Flag to track if current user is in this room
+        };
+      });
 
       setGameRooms(transformedRooms);
     } catch (err) {
@@ -96,15 +103,22 @@ const GameRoomsPage = () => {
     // Function to handle room updates
     const handleRoomUpdate = (data) => {
       console.log('Room list update received:', data);
-      const transformedRooms = data.rooms.map(room => ({
-        id: room.id.toString(),
-        gameId: room.game_id.toString(),
-        name: room.name,
-        creator: 'Unknown',
-        currentPlayers: room.players ? room.players.length : 0,
-        maxPlayers: room.max_players,
-        status: room.status
-      }));
+      const transformedRooms = data.rooms.map(room => {
+        // Check if current user is already in this room
+        const isUserInRoom = room.players && room.players.some(player => player.user_id === user?.id);
+
+        return {
+          id: room.id.toString(),
+          gameId: room.game_id.toString(),
+          name: room.name,
+          creator: 'Unknown',
+          currentPlayers: room.players ? room.players.length : 0,
+          maxPlayers: room.max_players,
+          status: room.status,
+          players: room.players || [],
+          isUserInRoom,
+        };
+      });
 
       setGameRooms(transformedRooms);
     };
@@ -154,17 +168,6 @@ const GameRoomsPage = () => {
       });
 
       // The room list will be updated automatically via WebSocket
-      // but we can also add it optimistically
-      const transformedRoom = {
-        id: newRoom.id.toString(),
-        gameId: newRoom.game_id.toString(),
-        name: newRoom.name,
-        creator: 'CurrentUser',
-        currentPlayers: newRoom.players ? newRoom.players.length : 0,
-        maxPlayers: newRoom.max_players,
-        status: newRoom.status
-      };
-
       setIsCreateRoomDialogOpen(false);
     } catch (err) {
       console.error('Error creating room:', err);
@@ -262,17 +265,29 @@ const GameRoomsPage = () => {
             <div key={room.id} className="game-room-card">
               <div className="game-room-header">
                 <h3 className="game-room-name">{room.name}</h3>
-                <span className="game-room-status">{room.status}</span>
+                <span className={`game-room-status status-${room.status.replace('_', '-')}`}>{room.status.replace('_', ' ')}</span>
               </div>
               <div className="game-room-players">
                 Players: {room.currentPlayers}/{room.maxPlayers}
               </div>
               <button
-                className={`btn ${room.currentPlayers >= room.maxPlayers ? 'btn-secondary cursor-not-allowed' : 'btn-primary'}`}
+                className={`btn ${
+                  // If user is in room OR room has space - use primary style
+                  (room.isUserInRoom || room.currentPlayers < room.maxPlayers)
+                    ? 'btn-primary'
+                    : 'btn-secondary cursor-not-allowed'
+                }`}
                 onClick={() => handleJoinRoom(room.id)}
-                disabled={room.currentPlayers >= room.maxPlayers}
+                // Only disable if room is full AND user is not already in the room
+                disabled={room.currentPlayers >= room.maxPlayers && !room.isUserInRoom}
               >
-                Join Room
+                {room.isUserInRoom ? (
+                  <>
+                    <UserCheck className="mr-2 w-4 h-4" /> Rejoin Room
+                  </>
+                ) : (
+                  'Join Room'
+                )}
               </button>
             </div>
           ))
