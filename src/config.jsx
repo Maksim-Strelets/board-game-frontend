@@ -5,8 +5,8 @@ const config = {
     wsUrl: 'ws://10.200.42.235:8000/ws'
   },
   production: {
-    apiUrl: 'https://your-production-api.com',
-    wsUrl: 'wss://your-production-api.com/ws'
+    apiUrl: 'https://board-game-backend-q2mc.onrender.com',
+    wsUrl: 'wss://board-game-backend-q2mc.onrender.com/ws'
   },
   test: {
     apiUrl: 'http://localhost:8000',
