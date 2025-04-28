@@ -28,8 +28,7 @@ const GameRoomsPage = () => {
         setSelectedGame(data);
         setIsLoading(false);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
-        setIsLoading(false);
+        handleApiError(err);
       }
     };
 
@@ -55,9 +54,24 @@ const GameRoomsPage = () => {
 
       setGameRooms(transformedRooms);
     } catch (err) {
-      console.error('Error fetching game rooms:', err);
+      handleApiError(err);
+    }
+  };
+
+  // Handle API errors including 401 Unauthorized
+  const handleApiError = (err) => {
+    console.error('API Error:', err);
+
+    // Check if the error is an unauthorized error (401)
+    if (err.response && err.response.status === 401) {
+      setError('You are not authorized. Please log in.');
+      // Redirect to login page after a short delay
+      setTimeout(() => navigate('/login', { state: { from: window.location.pathname } }), 2000);
+    } else {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
     }
+
+    setIsLoading(false);
   };
 
   // Fetch initial game rooms
@@ -106,7 +120,7 @@ const GameRoomsPage = () => {
         console.log('WebSocket connected successfully');
       } catch (err) {
         console.error('WebSocket connection error:', err);
-        setError(`WebSocket connection failed: ${err.message}`);
+        handleApiError(err);
       }
     };
 
@@ -154,7 +168,7 @@ const GameRoomsPage = () => {
       setIsCreateRoomDialogOpen(false);
     } catch (err) {
       console.error('Error creating room:', err);
-      alert(err instanceof Error ? err.message : 'Failed to create room');
+      handleApiError(err);
     }
   };
 
@@ -173,7 +187,7 @@ const GameRoomsPage = () => {
       navigate(`/game/${selectedGame.id}/room/${roomId}`);
     } catch (err) {
       console.error('Error joining room:', err);
-      alert(err instanceof Error ? err.message : 'Failed to join room');
+      handleApiError(err);
     }
   };
 
@@ -183,7 +197,20 @@ const GameRoomsPage = () => {
   }
 
   if (error) {
-    return <div className="container error">{error}</div>;
+    return (
+      <div className="container">
+        <div className="error-container bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+          <strong className="font-bold">Error: </strong>
+          <span className="block sm:inline">{error}</span>
+        </div>
+        <button
+          className="btn btn-secondary"
+          onClick={() => navigate('/login')}
+        >
+          Go to Login
+        </button>
+      </div>
+    );
   }
 
   if (!selectedGame) {

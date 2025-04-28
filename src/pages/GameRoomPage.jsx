@@ -24,6 +24,7 @@ const RoomPage: React.FC = () => {
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isRoomInitialized, setIsRoomInitialized] = useState(false);
+  const [error, setError] = useState(null);
 
   // Refs for chat scrolling and input
   const chatMessagesRef = useRef(null);
@@ -36,6 +37,22 @@ const RoomPage: React.FC = () => {
   const [GameSettingsComponent, setGameSettingsComponent] = useState(null);
   const [gameSettings, setGameSettings] = useState({});
   const [gameLoadError, setGameLoadError] = useState(null);
+
+  // Handler for API errors including 401 Unauthorized
+  const handleApiError = (err) => {
+    console.error('API Error:', err);
+
+    // Check if the error is an unauthorized error (401)
+    if (err.response && err.response.status === 401) {
+      setError('You are not authorized. Please log in.');
+      // Redirect to login page after a short delay
+      setTimeout(() => navigate('/login', { state: { from: window.location.pathname } }), 2000);
+    } else {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+    }
+
+    setIsLoading(false);
+  };
 
   // Effect to handle auto-scrolling
   useEffect(() => {
@@ -123,6 +140,7 @@ const RoomPage: React.FC = () => {
         console.log('room loaded');
       } catch (err) {
         console.error('Room data fetch error:', err);
+        handleApiError(err);
       } finally {
         setIsLoading(false);
       }
@@ -182,14 +200,23 @@ const RoomPage: React.FC = () => {
           setRoomStatus(data.status);
         });
 
+        api.getWs().on('error', (data) => {
+          // Handle WebSocket error events, including authorization errors
+          if (data && data.status === 401) {
+            setError('You are not authorized. Please log in.');
+            setTimeout(() => navigate('/login', { state: { from: window.location.pathname } }), 2000);
+          } else {
+            setError(data?.message || 'An unknown error occurred');
+          }
+        });
+
         if (!api.getWs().socket) {
           await api.getWs().connect(`/game/${gameId}/room/${roomId}`);
         }
 
       } catch (error) {
         console.error('Error connecting to game:', error);
-//         setError('Failed to connect to the game server.');
-        setIsLoading(false);
+        handleApiError(error);
       }
     };
 
@@ -253,6 +280,27 @@ const RoomPage: React.FC = () => {
     }
   };
 
+  // Loading and Error States
+  if (isLoading) {
+    return <div className="container">Loading game room...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="container">
+        <div className="error-container bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+          <strong className="font-bold">Error: </strong>
+          <span className="block sm:inline">{error}</span>
+        </div>
+        <button
+          className="btn btn-secondary"
+          onClick={() => navigate('/login')}
+        >
+          Go to Login
+        </button>
+      </div>
+    );
+  }
 
   return (
       <div className="container">

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from './../hooks/useAuth';
 import api from '../utils/api'
 import '../styles/gamelistpage.css';
 
@@ -21,6 +22,7 @@ const GAME_IMAGES = importAllLogos(
 
 const GameListPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [games, setGames] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -47,7 +49,8 @@ const GameListPage = () => {
   }, []);
 
   const handleGameSelect = (game) => {
-    navigate(`/games/${game.id}`);
+    if (!user) {navigate('/login')}
+    else {navigate(`/games/${game.id}`);}
   };
 
   // Loading and Error States
