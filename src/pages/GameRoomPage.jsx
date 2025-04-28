@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, X, AlertTriangle } from 'lucide-react';
 
 import api from '../utils/api'
 
@@ -25,6 +25,7 @@ const RoomPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRoomInitialized, setIsRoomInitialized] = useState(false);
   const [error, setError] = useState(null);
+  const [isCloseRoomModalOpen, setIsCloseRoomModalOpen] = useState(false);
 
   // Refs for chat scrolling and input
   const chatMessagesRef = useRef(null);
@@ -37,6 +38,9 @@ const RoomPage: React.FC = () => {
   const [GameSettingsComponent, setGameSettingsComponent] = useState(null);
   const [gameSettings, setGameSettings] = useState({});
   const [gameLoadError, setGameLoadError] = useState(null);
+
+  // Check if current user is the host
+  const isHost = roomUsers.length > 0 && user?.id === roomUsers[0]?.user_id;
 
   // Handler for API errors including 401 Unauthorized
   const handleApiError = (err) => {
@@ -198,6 +202,13 @@ const RoomPage: React.FC = () => {
 
         api.getWs().on('room_status_changed', (data) => {
           setRoomStatus(data.status);
+
+          // If room status changed to ended, redirect to game list after a short delay
+          if (data.status === 'ended') {
+            setTimeout(() => {
+              navigate(`/games/${gameId}`);
+            }, 3000);
+          }
         });
 
         api.getWs().on('error', (data) => {
@@ -244,7 +255,7 @@ const RoomPage: React.FC = () => {
     }
   };
 
-  const changeRoomStatus = (status: string) => {
+  const changeRoomStatus = (status) => {
     if (api.getWs().socket) {
       api.getWs().send(JSON.stringify({
         type: 'room_status',
@@ -253,7 +264,7 @@ const RoomPage: React.FC = () => {
     }
   };
 
-  const changePlayerStatus = (status: 'ready' | 'not_ready') => {
+  const changePlayerStatus = (status) => {
     if (api.getWs().socket && user?.id) {
       api.getWs().send(JSON.stringify({
         type: 'player_status',
@@ -277,6 +288,30 @@ const RoomPage: React.FC = () => {
         status: 'in_progress',
         settings: gameSettings
       }));
+    }
+  };
+
+  const closeRoom = () => {
+    if (api.getWs().socket && isHost) {
+      api.getWs().send(JSON.stringify({
+        type: 'room_status',
+        status: 'ended'
+      }));
+
+      // Close the modal
+      setIsCloseRoomModalOpen(false);
+
+      // Show a system message
+      setChatMessages(prev => [
+        ...prev,
+        {
+          id: `system-${Date.now()}`,
+          user_id: 'system',
+          username: 'System',
+          message: 'The room has been closed by the host. Redirecting to game list...',
+          timestamp: new Date().toISOString()
+        }
+      ]);
     }
   };
 
@@ -375,7 +410,7 @@ const RoomPage: React.FC = () => {
                     >
                       <ArrowLeft className="w-5 h-5" /> Back
                     </button>
-                    <h1 className="page-heading mb-0">Game Room {roomName}</h1>
+                    <h1 className="page-heading mb-0">{roomName}</h1>
                     <div className="flex items-center">
                       <span className={`room-status room-status-${roomStatus}`}>
                         {roomStatus.replace('_', ' ')}
@@ -387,7 +422,7 @@ const RoomPage: React.FC = () => {
               {roomStatus === 'waiting' ? (
                 <div>
                   {/* Game Settings Section */}
-                  {GameSettingsComponent && user?.id === roomUsers[0]?.user_id && (
+                  {isHost && GameSettingsComponent && (
                     <div className="game-settings-section mb-4">
                       <h3>Game Settings</h3>
                       <Suspense fallback={<div className="text-center py-4">Loading settings...</div>}>
@@ -398,19 +433,29 @@ const RoomPage: React.FC = () => {
                       </Suspense>
                     </div>
                   )}
-
-                  <button
-                    onClick={startGame}
-                    disabled={
-                      user?.id !== roomUsers[0]?.user_id ||
-                      roomStatus !== 'waiting' ||
-                      roomUsers.length < 2 ||
-                      roomUsers.some(p => p.status !== 'ready')
-                    }
-                    className="start-game-btn"
-                  >
-                    Start Game
-                  </button>
+                {(isHost &&
+                  <div className="flex justify-between items-center mt-4">
+                    <button
+                      onClick={() => setIsCloseRoomModalOpen(true)}
+                      className="btn btn-danger btn-sm ml-2"
+                      title="Close Room"
+                    >
+                      <X size={16} /> Close
+                    </button>
+                    <button
+                      onClick={startGame}
+                      disabled={
+                        !isHost ||
+                        roomStatus !== 'waiting' ||
+                        roomUsers.length < 2 ||
+                        roomUsers.some(p => p.status !== 'ready')
+                      }
+                      className="start-game-btn"
+                    >
+                      Start Game
+                    </button>
+                  </div>
+                  )}
                 </div>
               ) : (
                 <div className="game-board-wrapper">
@@ -451,7 +496,9 @@ const RoomPage: React.FC = () => {
                     <div
                       key={msg.id}
                       className={`chat-message ${
-                        msg.user_id === user.id
+                        msg.user_id === 'system'
+                          ? 'chat-message-system'
+                          : msg.user_id === user.id
                           ? 'chat-message-self'
                           : 'chat-message-user'
                       }`}
@@ -499,6 +546,43 @@ const RoomPage: React.FC = () => {
               />)}
           </div>
         </div>
+
+        {/* Close Room Confirmation Modal */}
+        {isCloseRoomModalOpen && (
+          <div className="modal-overlay">
+            <div className="confirmation-modal">
+              <div className="confirmation-modal-header">
+                <div className="confirmation-title">
+                  <AlertTriangle className="text-amber-500 mr-2" size={20} />
+                  <h3>Close Room</h3>
+                </div>
+                <button
+                  className="modal-close-btn"
+                  onClick={() => setIsCloseRoomModalOpen(false)}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="confirmation-modal-body">
+                <p>Are you sure you want to close this room? This will end the game for all players.</p>
+              </div>
+              <div className="confirmation-modal-footer">
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => setIsCloseRoomModalOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="btn btn-danger"
+                  onClick={closeRoom}
+                >
+                  Close Room
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
 };

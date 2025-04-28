@@ -415,3 +415,157 @@
   color: #6b7280;
 }
 
+/* Add these styles to your gameroom.css file */
+
+/* Close Room Button Styles */
+.btn-danger {
+  background-color: #EF4444;
+  color: white;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.btn-danger:hover {
+  background-color: #DC2626;
+}
+
+.btn-sm {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  border-radius: 0.375rem;
+}
+
+/* System Message Styles */
+.chat-message-system {
+  background-color: #F3F4F6;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.chat-message-system .chat-message-username {
+  font-weight: 600;
+  color: #4B5563;
+}
+
+.chat-message-system .chat-message-content {
+  color: #4B5563;
+  font-style: italic;
+}
+
+/* Confirmation Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.confirmation-modal {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 450px;
+  overflow: hidden;
+  animation: modal-appear 0.2s ease-out;
+}
+
+@keyframes modal-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.confirmation-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.confirmation-title {
+  display: flex;
+  align-items: center;
+}
+
+.confirmation-title h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  color: #6B7280;
+  cursor: pointer;
+  display: flex;
+  padding: 0.25rem;
+}
+
+.modal-close-btn:hover {
+  color: #111827;
+}
+
+.confirmation-modal-body {
+  padding: 1.25rem;
+}
+
+.confirmation-modal-body p {
+  margin: 0;
+  color: #4B5563;
+  line-height: 1.5;
+}
+
+.confirmation-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background-color: #F9FAFB;
+  border-top: 1px solid #E5E7EB;
+}
+
+.confirmation-modal-footer .btn {
+  min-width: 5rem;
+}
+
+/* Room status: ended style */
+.room-status-ended {
+  background-color: #FEE2E2;
+  color: #B91C1C;
+  border: 1px solid #FECACA;
+}
+
+/* Responsive design for modal */
+@media (max-width: 640px) {
+  .confirmation-modal {
+    max-width: 90%;
+  }
+
+  .confirmation-modal-footer {
+    flex-direction: column-reverse;
+  }
+
+  .confirmation-modal-footer .btn {
+    width: 100%;
+  }
+}
