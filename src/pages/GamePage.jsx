@@ -233,10 +233,10 @@ const GameRoomsPage = () => {
       {/* Create Room Button */}
       <div className="mb-4 flex justify-end">
         <button
-          className="btn btn-primary"
+          className="btn btn-primary create-room-button"
           onClick={() => setIsCreateRoomDialogOpen(true)}
         >
-          <Plus className="mr-2 w-4 h-4" /> Create Room
+          <Plus className="mr-2 w-4 h-4" /> Create New Room
         </button>
       </div>
 
@@ -245,10 +245,10 @@ const GameRoomsPage = () => {
         game={{
           id: selectedGame.id,
           name: selectedGame.name,
-          description: selectedGame.description || '',
-          minPlayers: selectedGame.min_players,
-          maxPlayers: selectedGame.max_players,
-          thumbnailUrl: '/api/placeholder/300/200'
+          description: selectedGame.description || 'No description available.',
+          minPlayers: selectedGame.min_players || 2,
+          maxPlayers: selectedGame.max_players || 4,
+          thumbnailUrl: selectedGame.image_url || '/api/placeholder/300/200'
         }}
         isOpen={isCreateRoomDialogOpen}
         onClose={() => setIsCreateRoomDialogOpen(false)}

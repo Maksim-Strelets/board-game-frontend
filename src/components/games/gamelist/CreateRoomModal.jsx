@@ -1,99 +1,181 @@
 import React, { useState, useEffect } from 'react';
-import { Game } from './Interfaces';
 import { X } from 'lucide-react';
-// import './../../../styles/gamelistpage.css';
+import './createRoomModal.css';
 
-// Create Room Modal Component
-const CreateRoomModal: React.FC<{
-  game: Game;
-  isOpen: boolean;
-  onClose: () => void;
-  onCreate: (roomName: string, maxPlayers: number) => void;
-}> = ({ game, isOpen, onClose, onCreate }) => {
-  const [newRoomName, setNewRoomName] = useState('');
-  const [newRoomMaxPlayers, setNewRoomMaxPlayers] = useState(game.minPlayers);
+const importAllLogos = (r) => {
+  const images = {};
+  r.keys().forEach((key) => {
+    const gameName = key.split('/')[1]
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+    images[gameName] = r(key);
+  });
+  return images;
+};
 
-  // Reset form when modal opens
+const GAME_IMAGES = importAllLogos(
+  require.context('/src/assets/games/', true, /logo\.png$/)
+);
+
+const getGameImage = (gameName) => {
+  return GAME_IMAGES[gameName] || '/api/placeholder/300/200';
+};
+
+const CreateRoomModal = ({ game, isOpen, onClose, onCreate }) => {
+  const [roomName, setRoomName] = useState('');
+  const [maxPlayers, setMaxPlayers] = useState(game?.maxPlayers || 4);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  // Reset the form when the modal is opened with a new game
   useEffect(() => {
-    if (isOpen) {
-      setNewRoomName('');
-      setNewRoomMaxPlayers(game.minPlayers);
+    if (isOpen && game) {
+      setRoomName(`${game.name} Room`);
+      setMaxPlayers(game.maxPlayers || 4);
+      setError('');
     }
   }, [isOpen, game]);
 
-  const handleCreate = () => {
-    if (!newRoomName.trim()) return;
+  // Handle modal click outside
+  const handleModalContainerClick = (e) => {
+    if (e.target.classList.contains('modal-container')) {
+      onClose();
+    }
+  };
 
-    onCreate(newRoomName.trim(), newRoomMaxPlayers);
-    setNewRoomName('');
+  // Handle room creation submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Validate inputs
+    if (!roomName.trim()) {
+      setError('Room name is required');
+      return;
+    }
+
+    if (maxPlayers < game.minPlayers) {
+      setError(`Minimum number of players is ${game.minPlayers}`);
+      return;
+    }
+
+    if (maxPlayers > game.maxPlayers) {
+      setError(`Maximum number of players is ${game.maxPlayers}`);
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      setError('');
+
+      // Call the onCreate handler passed from parent
+      await onCreate(roomName, maxPlayers);
+
+      // Reset form and close on success
+      setRoomName('');
+      setMaxPlayers(game.maxPlayers || 4);
+      onClose();
+    } catch (err) {
+      setError(err.message || 'Failed to create room');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content relative">
-        <button
-          className="absolute top-4 right-4 text-gray-600 hover:text-gray-900"
-          onClick={onClose}
-          aria-label="Close modal"
-        >
-          <X className="w-6 h-6" />
-        </button>
+    <div className="modal-container" onClick={handleModalContainerClick}>
+      <div className="modal-content create-room-modal">
+        <div className="modal-header">
+          <h2>Create Game Room</h2>
+          <button
+            className="modal-close-btn"
+            onClick={onClose}
+            aria-label="Close dialog"
+          >
+            <X size={20} />
+          </button>
+        </div>
 
-        <h2 className="page-heading mb-4">Create New Room</h2>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block mb-2 text-gray-700">Room Name</label>
-            <input
-              type="text"
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder={`${game.name} Room`}
-              value={newRoomName}
-              onChange={(e) => setNewRoomName(e.target.value)}
-              required
-            />
+        <div className="modal-body">
+          <div className="game-info">
+            <div className="game-image-container">
+              <img
+                src={getGameImage(game.name)}
+                alt={game.name}
+                className="game-thumbnail"
+              />
+            </div>
+            <div className="game-details">
+              <h3>{game.name}</h3>
+              <p className="game-player-count">
+                <span className="player-label">Players:</span> {game.minPlayers} - {game.maxPlayers}
+              </p>
+              <p className="game-description">{game.description}</p>
+            </div>
           </div>
 
-          <div>
-            <label className="block mb-2 text-gray-700">Max Players</label>
-            <select
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={newRoomMaxPlayers}
-              onChange={(e) => setNewRoomMaxPlayers(Number(e.target.value))}
-            >
-              {Array.from(
-                { length: game.maxPlayers - game.minPlayers + 1 },
-                (_, i) => game.minPlayers + i
-              ).map(num => (
-                <option key={num} value={num}>
-                  {num} Players
-                </option>
-              ))}
-            </select>
-          </div>
+          {error && (
+            <div className="error-message">
+              {error}
+            </div>
+          )}
 
-          <div className="flex space-x-4">
-            <button
-              className={`btn flex-1 ${
-                !newRoomName.trim()
-                  ? 'btn-secondary cursor-not-allowed'
-                  : 'btn-primary'
-              }`}
-              onClick={handleCreate}
-              disabled={!newRoomName.trim()}
-            >
-              Create Room
-            </button>
+          <form onSubmit={handleSubmit} className="create-room-form">
+            <div className="form-group">
+              <label htmlFor="roomName">Room Name</label>
+              <input
+                id="roomName"
+                type="text"
+                value={roomName}
+                onChange={(e) => setRoomName(e.target.value)}
+                placeholder="Enter room name"
+                className="form-input"
+              />
+            </div>
 
-            <button
-              className="btn btn-secondary flex-1"
-              onClick={onClose}
-            >
-              Cancel
-            </button>
-          </div>
+            <div className="form-group">
+              <label htmlFor="maxPlayers">Maximum Players</label>
+              <div className="player-count-selector">
+                <button
+                  type="button"
+                  className="player-count-btn"
+                  onClick={() => setMaxPlayers(prev => Math.max(game.minPlayers, prev - 1))}
+                  disabled={maxPlayers <= game.minPlayers}
+                >
+                  -
+                </button>
+                <span className="player-count-value">{maxPlayers}</span>
+                <button
+                  type="button"
+                  className="player-count-btn"
+                  onClick={() => setMaxPlayers(prev => Math.min(game.maxPlayers, prev + 1))}
+                  disabled={maxPlayers >= game.maxPlayers}
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            <div className="form-actions">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={onClose}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Creating...' : 'Create Room'}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
