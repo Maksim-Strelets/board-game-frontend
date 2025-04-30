@@ -1,8 +1,8 @@
 // src/config.js
 const config = {
   development: {
-    apiUrl: 'http://10.200.42.235:8000',
-    wsUrl: 'ws://10.200.42.235:8000/ws'
+    apiUrl: 'http://192.168.0.20:8000',
+    wsUrl: 'ws://192.168.0.20:8000/ws'
   },
   production: {
     apiUrl: 'https://board-game-backend-q2mc.onrender.com',
