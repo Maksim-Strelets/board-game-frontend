@@ -42,9 +42,11 @@ const NobleSelectionPopup = ({ nobles, onSelect }) => {
                   <div className="splendor-noble-tooltip">
                     <div className="splendor-noble-requirements">
                       {Object.entries(noble.requirements || {}).map(([color, amount]) => (
-                        <div key={color} className={`splendor-requirement-token ${color}`}>
-                          {amount}
-                        </div>
+                        amount > 0 && (
+                          <div key={color} className={`splendor-requirement-token ${color}`}>
+                            {amount}
+                          </div>
+                        )
                       ))}
                     </div>
                   </div>

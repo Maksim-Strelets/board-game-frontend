@@ -227,10 +227,10 @@ const Game = ({ roomId, user }) => {
   const handleTokenReturn = (tokensToReturn) => {
     if (!tokenReturnData) return;
 
-    api.getWs().send(JSON.stringify({
-      type: 'return_tokens',
+    makeMove({
+      action: 'return_tokens',
       tokens: tokensToReturn
-    }));
+    });
 
     setTokenReturnData(null);
   };
@@ -239,10 +239,10 @@ const Game = ({ roomId, user }) => {
   const handleNobleSelection = (nobleId) => {
     if (!nobleSelectionData) return;
 
-    api.getWs().send(JSON.stringify({
-      type: 'select_noble',
+    makeMove({
+      action: 'select_noble',
       noble_id: nobleId
-    }));
+    });
 
     setNobleSelectionData(null);
   };
@@ -402,7 +402,6 @@ const Game = ({ roomId, user }) => {
                             zIndex: idx
                           }}
                         >
-                          <div className="splendor-card-gem"></div>
                         </div>
                       ))}
                       <div className="splendor-card-count">{cards.length}</div>
@@ -475,8 +474,6 @@ const Game = ({ roomId, user }) => {
                         onMouseLeave={() => setIsZoomed(null)}
                       >
                         {card.points > 0 && <div className="splendor-card-points">{card.points}</div>}
-                        <div className="splendor-card-gem"></div>
-
                         {isZoomed === card.id && (
                           <div className="splendor-card-tooltip">
                             <div className="splendor-card-costs">
@@ -605,7 +602,6 @@ const Game = ({ roomId, user }) => {
                             zIndex: idx
                           }}
                         >
-                          <div className="splendor-card-gem"></div>
                         </div>
                       ))}
                       <div className="splendor-card-count">{cards.length}</div>
@@ -628,8 +624,6 @@ const Game = ({ roomId, user }) => {
                     onMouseLeave={() => setIsZoomed(null)}
                   >
                     {card.points > 0 && <div className="splendor-card-points">{card.points}</div>}
-                    <div className="splendor-card-gem"></div>
-
                     {isZoomed === `reserved-${card.id}` && (
                       <div className="splendor-card-tooltip">
                         <div className="splendor-card-costs">

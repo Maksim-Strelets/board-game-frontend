@@ -148,27 +148,27 @@
 }
 
 .splendor-card-white, .splendor-purchased-card.splendor-card-white {
-  background-color: #f8f9fa;
+  background-color: #f8f9fae0;
   border: 1px solid #dee2e6;
 }
 
 .splendor-card-blue, .splendor-purchased-card.splendor-card-blue {
-  background-color: #007bff;
+  background-color: #007bffe0;
   color: white;
 }
 
 .splendor-card-green, .splendor-purchased-card.splendor-card-green {
-  background-color: #28a745;
+  background-color: #28a745e0;
   color: white;
 }
 
 .splendor-card-red, .splendor-purchased-card.splendor-card-red {
-  background-color: #dc3545;
+  background-color: #dc3545e0;
   color: white;
 }
 
 .splendor-card-black, .splendor-purchased-card.splendor-card-black {
-  background-color: #343a40;
+  background-color: #343a40e0;
   color: white;
 }
 
@@ -809,7 +809,6 @@
   background-color: white;
   border-radius: 8px;
   padding: 1.5rem;
-  max-width: 500px;
   width: 90%;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
@@ -864,5 +863,203 @@
 
   .splendor-player-cards-section {
     flex-direction: column;
+  }
+}
+
+/* Token Return Popup Styles */
+.token-return-popup {
+  padding: 1.5rem;
+}
+
+.token-return-instruction {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  font-size: 1.1rem;
+  color: #495057;
+}
+
+/* Progress bar */
+.token-return-progress {
+  margin-bottom: 1.5rem;
+}
+
+.token-return-progress-bar {
+  height: 10px;
+  background-color: #e9ecef;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.token-return-progress-fill {
+  height: 100%;
+  background-color: #007bff;
+  border-radius: 5px;
+  transition: width 0.3s ease;
+}
+
+.token-return-progress-text {
+  text-align: center;
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+/* Token selection grid */
+.token-return-selection {
+  justify-content: center;
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.token-select-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.token-select-item.selected {
+  background-color: rgba(0, 123, 255, 0.1);
+  border: 1px solid rgba(0, 123, 255, 0.3);
+}
+
+.token-color-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 0.8rem;
+}
+
+.token-color-name {
+  text-transform: capitalize;
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+.token-count-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  width: 100%;
+}
+
+.token-control-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.token-control-btn.decrease {
+  background-color: #f8d7da;
+  color: #dc3545;
+}
+
+.token-control-btn.decrease:hover:not(:disabled) {
+  background-color: #dc3545;
+  color: white;
+}
+
+.token-control-btn.increase {
+  background-color: #d4edda;
+  color: #28a745;
+}
+
+.token-control-btn.increase:hover:not(:disabled) {
+  background-color: #28a745;
+  color: white;
+}
+
+.token-control-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.token-selected-count {
+  font-size: 1.2rem;
+  font-weight: bold;
+  min-width: 1.5rem;
+  text-align: center;
+}
+
+/* Action buttons */
+.token-return-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.token-auto-select-btn, .token-reset-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.token-auto-select-btn {
+  background-color: #e2e3e5;
+  color: #383d41;
+}
+
+.token-auto-select-btn:hover:not(:disabled) {
+  background-color: #d6d8db;
+}
+
+.token-reset-btn {
+  background-color: #e2e3e5;
+  color: #383d41;
+}
+
+.token-reset-btn:hover:not(:disabled) {
+  background-color: #d6d8db;
+}
+
+.token-auto-select-btn:disabled, .token-reset-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Submit button customization */
+.token-return-popup .splendor-popup-button {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+}
+
+.token-return-popup .splendor-popup-button:disabled {
+  background-color: #6c757d;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 576px) {
+  .token-return-selection {
+    grid-template-columns: 1fr;
+  }
+
+  .token-select-item {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 0.8rem;
+  }
+
+  .token-color-info {
+    flex-direction: row;
+    margin-bottom: 0;
   }
 }
