@@ -411,19 +411,17 @@ const Game = ({ roomId, user }) => {
               </div>
 
               {/* Player's nobles */}
-              <div className="splendor-player-nobles">
-                {playerData.nobles && playerData.nobles.map((noble, idx) => (
-                  <div
-                    key={`${noble.id}-${idx}`}
-                    className="splendor-noble-tile"
-                    onMouseEnter={() => setIsZoomed(noble.id)}
-                    onMouseLeave={() => setIsZoomed(null)}
-                  >
-                    {noble.points && <div className="splendor-noble-points">{noble.points}</div>}
-
-                    {isZoomed === noble.id && (
-                      <div className="splendor-noble-tooltip">
-                        <div className="splendor-noble-requirements">
+                <div className="splendor-player-nobles">
+                  {playerData.nobles && playerData.nobles.map((noble, idx) => (
+                    <div
+                      key={`${noble.id}-${idx}`}
+                      className="splendor-noble-container"
+                    >
+                      {/* The noble tile itself */}
+                      <div className="splendor-noble-tile">
+                      {/* Vertical tooltip on the left */}
+                      <div className="splendor-noble-tooltip vertical-tooltip">
+                        <div className="splendor-noble-requirements vertical">
                           {Object.entries(noble.requirements || {}).map(([color, amount]) => (
                             amount > 0 && (
                               <div key={color} className={`splendor-requirement-token ${color}`}>
@@ -433,10 +431,11 @@ const Game = ({ roomId, user }) => {
                           ))}
                         </div>
                       </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+                        {noble.points && <div className="splendor-noble-points">{noble.points}</div>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
 
               <div className="splendor-player-stats">
                 <span>Prestige: {playerData.prestige || 0}</span>
@@ -463,20 +462,20 @@ const Game = ({ roomId, user }) => {
                     <div className="splendor-deck-count">{cardDeckCounts[level] || 0}</div>
                     <span className="splendor-level-label">Level {level}</span>
                   </div>
-
-                  <div className="splendor-visible-cards">
-                    {visibleCards[level] && visibleCards[level].map((card, idx) => (
-                      <div
-                        key={`${card.id}-${idx}`}
-                        className={`splendor-card splendor-card-${card.gem_color} ${selectedCard && selectedCard.card && selectedCard.card.id === card.id ? 'selected' : ''}`}
-                        onClick={() => isCurrentPlayerTurn && handleCardSelect(card, level, idx)}
-                        onMouseEnter={() => setIsZoomed(card.id)}
-                        onMouseLeave={() => setIsZoomed(null)}
-                      >
-                        {card.points > 0 && <div className="splendor-card-points">{card.points}</div>}
-                        {isZoomed === card.id && (
-                          <div className="splendor-card-tooltip">
-                            <div className="splendor-card-costs">
+                    <div className="splendor-visible-cards">
+                      {visibleCards[level] && visibleCards[level].map((card, idx) => (
+                        <div
+                          key={`${card.id}-${idx}`}
+                          className="splendor-card-container"
+                        >
+                          {/* The card itself */}
+                          <div
+                            className={`splendor-card splendor-card-${card.gem_color} ${selectedCard && selectedCard.card && selectedCard.card.id === card.id ? 'selected' : ''}`}
+                            onClick={() => isCurrentPlayerTurn && handleCardSelect(card, level, idx)}
+                          >
+                          {/* Vertical tooltip on the left */}
+                          <div className="splendor-card-tooltip vertical-tooltip">
+                            <div className="splendor-card-costs vertical">
                               {Object.entries(card.cost || {}).map(([color, amount]) => (
                                 amount > 0 && (
                                   <div key={color} className={`splendor-cost-token ${color}`}>
@@ -486,14 +485,15 @@ const Game = ({ roomId, user }) => {
                               ))}
                             </div>
                           </div>
-                        )}
-                      </div>
-                    ))}
+                            {card.points > 0 && <div className="splendor-card-points">{card.points}</div>}
+                          </div>
+                        </div>
+                      ))}
 
-                    {(!visibleCards[level] || visibleCards[level].length === 0) && (
-                      <div className="splendor-empty-cards">No cards available</div>
-                    )}
-                  </div>
+                      {(!visibleCards[level] || visibleCards[level].length === 0) && (
+                        <div className="splendor-empty-cards">No cards available</div>
+                      )}
+                    </div>
                 </div>
               ))}
             </div>
@@ -523,34 +523,34 @@ const Game = ({ roomId, user }) => {
             <div className="splendor-nobles-section">
               <h3 className="splendor-section-title">Nobles</h3>
               <div className="splendor-nobles-container">
-                {nobleTiles.map((noble, idx) => (
-                  <div
-                    key={`${noble.id}-${idx}`}
-                    className="splendor-noble-tile"
-                    onMouseEnter={() => setIsZoomed(noble.id)}
-                    onMouseLeave={() => setIsZoomed(null)}
-                  >
-                    {noble.points && <div className="splendor-noble-points">{noble.points}</div>}
-
-                    {isZoomed === noble.id && (
-                      <div className="splendor-noble-tooltip">
-                        <div className="splendor-noble-requirements">
-                          {Object.entries(noble.requirements || {}).map(([color, amount]) => (
-                            amount > 0 && (
-                              <div key={color} className={`splendor-requirement-token ${color}`}>
-                                {amount}
-                              </div>
-                            )
-                          ))}
-                        </div>
-                      </div>
-                    )}
+              {nobleTiles.map((noble, idx) => (
+                <div
+                  key={`${noble.id}-${idx}`}
+                  className="splendor-noble-container"
+                >
+                  {/* The noble tile itself */}
+                  <div className="splendor-noble-tile">
+                  {/* Vertical tooltip on the left */}
+                  <div className="splendor-noble-tooltip vertical-tooltip">
+                    <div className="splendor-noble-requirements vertical">
+                      {Object.entries(noble.requirements || {}).map(([color, amount]) => (
+                        amount > 0 && (
+                          <div key={color} className={`splendor-requirement-token ${color}`}>
+                            {amount}
+                          </div>
+                        )
+                      ))}
+                    </div>
                   </div>
-                ))}
-                {nobleTiles.length === 0 && (
-                  <div className="splendor-empty-nobles">All nobles have been claimed</div>
-                )}
-              </div>
+
+                    {noble.points && <div className="splendor-noble-points">{noble.points}</div>}
+                  </div>
+                </div>
+              ))}
+              {nobleTiles.length === 0 && (
+                <div className="splendor-empty-nobles">All nobles have been claimed</div>
+              )}
+            </div>
             </div>
           </div>
         </div>
@@ -614,19 +614,15 @@ const Game = ({ roomId, user }) => {
             {/* Player's reserved cards */}
             <div className="splendor-your-reserved">
               <h3 className="splendor-section-title">Reserved Cards ({yourReservedCards.length}/3)</h3>
-              <div className="splendor-reserved-cards">
-                {yourReservedCards.map((card, idx) => (
-                  <div
-                    key={`reserved-${idx}`}
-                    className={`splendor-card splendor-card-${card.gem_color} ${selectedCard && selectedCard.fromReserved && selectedCard.position === idx ? 'selected' : ''}`}
-                    onClick={() => isCurrentPlayerTurn && handleCardSelect(card, null, idx, true)}
-                    onMouseEnter={() => setIsZoomed(`reserved-${card.id}`)}
-                    onMouseLeave={() => setIsZoomed(null)}
-                  >
-                    {card.points > 0 && <div className="splendor-card-points">{card.points}</div>}
-                    {isZoomed === `reserved-${card.id}` && (
-                      <div className="splendor-card-tooltip">
-                        <div className="splendor-card-costs">
+                <div className="splendor-reserved-cards">
+                  {yourReservedCards.map((card, idx) => (
+                    <div
+                      key={`reserved-${idx}`}
+                      className="splendor-card-container"
+                    >
+                      {/* Vertical tooltip on the left */}
+                      <div className="splendor-card-tooltip vertical-tooltip">
+                        <div className="splendor-card-costs vertical">
                           {Object.entries(card.cost || {}).map(([costColor, amount]) => (
                             amount > 0 && (
                               <div key={costColor} className={`splendor-cost-token ${costColor}`}>
@@ -636,31 +632,36 @@ const Game = ({ roomId, user }) => {
                           ))}
                         </div>
                       </div>
-                    )}
-                  </div>
-                ))}
-                {yourReservedCards.length === 0 && (
-                  <div className="splendor-empty-reserved">No reserved cards</div>
-                )}
-              </div>
+
+                      {/* The card itself */}
+                      <div
+                        className={`splendor-card splendor-card-${card.gem_color} ${selectedCard && selectedCard.fromReserved && selectedCard.position === idx ? 'selected' : ''}`}
+                        onClick={() => isCurrentPlayerTurn && handleCardSelect(card, null, idx, true)}
+                      >
+                        {card.points > 0 && <div className="splendor-card-points">{card.points}</div>}
+                      </div>
+                    </div>
+                  ))}
+                  {yourReservedCards.length === 0 && (
+                    <div className="splendor-empty-reserved">No reserved cards</div>
+                  )}
+                </div>
             </div>
 
             {/* Player's nobles */}
             <div className="splendor-your-nobles">
               <h3 className="splendor-section-title">Your Nobles</h3>
-              <div className="splendor-nobles-container">
-                {yourNobles.map((noble, idx) => (
-                  <div
-                    key={`${noble.id}-${idx}`}
-                    className="splendor-noble-tile"
-                    onMouseEnter={() => setIsZoomed(`your-${noble.id}`)}
-                    onMouseLeave={() => setIsZoomed(null)}
-                  >
-                    {noble.points && <div className="splendor-noble-points">{noble.points}</div>}
-
-                    {isZoomed === `your-${noble.id}` && (
-                      <div className="splendor-noble-tooltip">
-                        <div className="splendor-noble-requirements">
+                <div className="splendor-nobles-container">
+                  {yourNobles.map((noble, idx) => (
+                    <div
+                      key={`${noble.id}-${idx}`}
+                      className="splendor-noble-container"
+                    >
+                      {/* The noble tile itself */}
+                      <div className="splendor-noble-tile">
+                      {/* Vertical tooltip on the left */}
+                      <div className="splendor-noble-tooltip vertical-tooltip">
+                        <div className="splendor-noble-requirements vertical">
                           {Object.entries(noble.requirements || {}).map(([color, amount]) => (
                             amount > 0 && (
                               <div key={color} className={`splendor-requirement-token ${color}`}>
@@ -670,13 +671,14 @@ const Game = ({ roomId, user }) => {
                           ))}
                         </div>
                       </div>
-                    )}
-                  </div>
-                ))}
-                {yourNobles.length === 0 && (
-                  <div className="splendor-empty-nobles">No nobles yet</div>
-                )}
-              </div>
+                        {noble.points && <div className="splendor-noble-points">{noble.points}</div>}
+                      </div>
+                    </div>
+                  ))}
+                  {yourNobles.length === 0 && (
+                    <div className="splendor-empty-nobles">No nobles yet</div>
+                  )}
+                </div>
             </div>
           </div>
 
