@@ -19,8 +19,6 @@ const NobleSelectionPopup = ({ nobles, onSelect }) => {
       <div className="splendor-popup">
         <div className="splendor-popup-title">Select a Noble</div>
         <div className="splendor-popup-content">
-          <p>You have impressed multiple nobles! Choose one to visit you.</p>
-
           <div className="splendor-noble-selection">
             {nobles.map((noble, idx) => (
               <div
@@ -36,11 +34,9 @@ const NobleSelectionPopup = ({ nobles, onSelect }) => {
                   transition: 'all 0.2s'
                 }}
               >
-                {noble.points && <div className="splendor-noble-points">{noble.points}</div>}
-
-                {isZoomed === noble.id && (
-                  <div className="splendor-noble-tooltip">
-                    <div className="splendor-noble-requirements">
+                  {/* Vertical tooltip on the left */}
+                  <div className="splendor-noble-tooltip vertical-tooltip">
+                    <div className="splendor-noble-requirements vertical">
                       {Object.entries(noble.requirements || {}).map(([color, amount]) => (
                         amount > 0 && (
                           <div key={color} className={`splendor-requirement-token ${color}`}>
@@ -50,7 +46,7 @@ const NobleSelectionPopup = ({ nobles, onSelect }) => {
                       ))}
                     </div>
                   </div>
-                )}
+                {noble.points && <div className="splendor-noble-points">{noble.points}</div>}
               </div>
             ))}
           </div>

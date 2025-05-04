@@ -428,7 +428,6 @@
 .splendor-cards-section {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
 }
 
 .splendor-card-level {
@@ -1098,11 +1097,6 @@
   display: flex;
   gap: 0px; /* Reduced from 0.5rem to accommodate tooltips */
   flex-wrap: wrap;
-}
-
-/* Make the cards a bit more compact with tooltips always showing */
-.splendor-card-level {
-  margin-bottom: 10px;
 }
 
 /* Adjust reserved cards section for tooltips */
