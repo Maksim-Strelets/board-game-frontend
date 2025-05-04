@@ -438,7 +438,10 @@ const Game = ({ roomId, user }) => {
                 </div>
 
               <div className="splendor-player-stats">
-                <span>Prestige: {playerData.prestige || 0}</span>
+                <div className="splendor-player-prestige">
+                  <Award size={20} />
+                  <span>Prestige: {playerData.prestige || 0}</span>
+                </div>
                 {/* Reserved cards indicator */}
                 {playerData.reserved_count > 0 && (
                   <div className="splendor-reserved-indicator">

@@ -75,6 +75,7 @@
   padding: 0.5rem 1rem;
   background-color: #f8f9fa;
   border-radius: 4px;
+  justify-content: space-between;
 }
 
 .splendor-ranking-item.current-player {
