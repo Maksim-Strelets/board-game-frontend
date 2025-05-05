@@ -623,6 +623,11 @@ const Game = ({ roomId, user }) => {
                       key={`reserved-${idx}`}
                       className="splendor-card-container"
                     >
+                      {/* The card itself */}
+                      <div
+                        className={`splendor-card splendor-card-${card.gem_color} ${selectedCard && selectedCard.fromReserved && selectedCard.position === idx ? 'selected' : ''}`}
+                        onClick={() => isCurrentPlayerTurn && handleCardSelect(card, null, idx, true)}
+                      >
                       {/* Vertical tooltip on the left */}
                       <div className="splendor-card-tooltip vertical-tooltip">
                         <div className="splendor-card-costs vertical">
@@ -635,12 +640,6 @@ const Game = ({ roomId, user }) => {
                           ))}
                         </div>
                       </div>
-
-                      {/* The card itself */}
-                      <div
-                        className={`splendor-card splendor-card-${card.gem_color} ${selectedCard && selectedCard.fromReserved && selectedCard.position === idx ? 'selected' : ''}`}
-                        onClick={() => isCurrentPlayerTurn && handleCardSelect(card, null, idx, true)}
-                      >
                         {card.points > 0 && <div className="splendor-card-points">{card.points}</div>}
                       </div>
                     </div>
